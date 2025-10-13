@@ -1,0 +1,1 @@
+FOURCHAN_BASE_URL = "https://a.4cdn.org"
