@@ -1,9 +1,13 @@
 
 from dotenv import load_dotenv
-from faktory import init_faktory_client
+from utils.faktory import init_faktory_client
+from utils.logger import Logger
 import datetime
-from logger import logger 
+from constants.constants import CHAN_CRAWLER
 load_dotenv()
+
+
+logger = Logger(CHAN_CRAWLER).get_logger()
 
 if __name__ == "__main__":
     logger.info("Cold starting for board")

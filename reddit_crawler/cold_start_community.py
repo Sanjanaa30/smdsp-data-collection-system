@@ -1,20 +1,18 @@
+
+from dotenv import load_dotenv
 from reddit_crawler.utils.faktory import init_faktory_client
+import datetime
 from utils.logger import Logger 
 from constants.constants import REDDIT_CRAWLER
-from communities_crawler import get_communities
+load_dotenv()
 
 logger = Logger(REDDIT_CRAWLER).get_logger()
-
-def main():
-    logger.info("Starting Reddit Crawler...")
+if __name__ == "__main__":
+    logger.info("Cold starting for board")
+    # Default url for a Faktory server running locally
     init_faktory_client(
-        role="consumer",
+        role="producer",
         jobtype="enqueue_crawl_community",
         queue="enqueue-crawl-community",
-        fn=get_communities,
+        delayedTimer=datetime.timedelta(minutes=5),
     )
-    # init_community_crawler()
-
-
-if __name__ == "__main__":
-    main()
