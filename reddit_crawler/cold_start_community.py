@@ -1,10 +1,12 @@
 
 from dotenv import load_dotenv
-from faktory import init_faktory_client
+from reddit_crawler.utils.faktory import init_faktory_client
 import datetime
-from logger import logger 
+from utils.logger import Logger 
+from constants.constants import REDDIT_CRAWLER
 load_dotenv()
 
+logger = Logger(REDDIT_CRAWLER).get_logger()
 if __name__ == "__main__":
     logger.info("Cold starting for board")
     # Default url for a Faktory server running locally

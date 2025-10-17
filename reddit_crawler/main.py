@@ -1,9 +1,9 @@
-from faktory import init_faktory_client
-from logger_factory import LoggerFactory
-from constants import REDDIT_CRAWLER
+from reddit_crawler.utils.faktory import init_faktory_client
+from utils.logger import Logger 
+from constants.constants import REDDIT_CRAWLER
 from communities_crawler import get_communities
 
-logger = LoggerFactory(REDDIT_CRAWLER).get_logger()
+logger = Logger(REDDIT_CRAWLER).get_logger()
 
 def main():
     logger.info("Starting Reddit Crawler...")

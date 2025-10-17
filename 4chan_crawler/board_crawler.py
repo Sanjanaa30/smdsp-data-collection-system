@@ -1,17 +1,22 @@
 import datetime
-import os
 
 # import logging
 from typing import Any, Dict, List
 
 from chan_client import ChanClient
-from constants import INSERT_BULK_BOARD_DATA_QUERY, SELECT_ALL_BOARDS_QUERY
+from constants.plsql_constants import (
+    INSERT_BULK_BOARD_DATA_QUERY,
+    SELECT_BOARD_CODE_QUERY,
+)
+from constants.constants import CHAN_CRAWLER
 from dotenv import load_dotenv
-from faktory import init_faktory_client
-from logger import logger
-from plsql import PLSQL
+from utils.faktory import init_faktory_client
+from utils.logger import Logger
+from utils.plsql import PLSQL
 
 load_dotenv()
+
+logger = Logger(CHAN_CRAWLER).get_logger()
 
 
 class BoardCrawler:
@@ -77,24 +82,24 @@ def fetch_and_save_boards():
     This function is intended to be called by the Faktory consumer.
     """
     crawler = BoardCrawler()
-    # if (os.getenv("LOG_LEVEL") == "DEBUG"):
-    #     crawler.print_all_boards()
-    # else:
     boards = crawler.get_all_boards()
     values = []
+    plsql = PLSQL()
+    current_boards_raw = plsql.get_data_from(SELECT_BOARD_CODE_QUERY)
+    # logger.debug(f"current_boards_raw {current_boards_raw}")
+    current_boards = {row[0] for row in current_boards_raw} 
+    logger.debug(f"Current Boards {current_boards}")
     for board in boards:
         board_code = board.get("board", "N/A")
-        board_title = board.get("title", "No Title")
-        values.append((board_code, board_title))
-
-    plsql = PLSQL()
-
-    current_boards = plsql.get_data_from(SELECT_ALL_BOARDS_QUERY)
-    if (current_boards == values):
-        logger.info("No new boards to insert.")
-        plsql.close_connection()
+        if board_code not in current_boards:
+            board_title = board.get("title", "No Title")
+            board_meta_description = board.get("meta_description", "No Meta Description")
+            ws_board = board.get("ws_board", 0)
+            values.append((board_code, board_title, board_meta_description, ws_board))
+    if (len(values) == 0):
+        logger.info("No New Boards found")
     else:
-        # insert_boards_into_db(crawler.get_all_boards())
+        logger.info(f"New Boards found {values}")
         plsql.insert_bulk_data_into_db(INSERT_BULK_BOARD_DATA_QUERY, values)
         plsql.close_connection()
 

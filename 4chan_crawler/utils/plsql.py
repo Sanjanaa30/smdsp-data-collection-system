@@ -3,16 +3,17 @@ import os
 import psycopg2
 from pathlib import Path
 from dotenv import load_dotenv
-from logger import logger
+from utils.logger import Logger
+from constants.constants import CHAN_CRAWLER
 from psycopg2.extras import execute_values
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")        
 
-
+logger = Logger(CHAN_CRAWLER).get_logger()
 class PLSQL:
     def __init__(self):
         logger.info("Connecting to PostgreSQL database...")
-        DATABASE_URL = os.environ.get("CHAN_DATABASE_URL")
+        DATABASE_URL = os.environ.get("DATABASE_URL")
         logger.debug(f"DATABASE_URL: {DATABASE_URL}")
         self.conn = psycopg2.connect(dsn=DATABASE_URL)
         self.cur = self.conn.cursor()
@@ -36,10 +37,12 @@ class PLSQL:
             logger.debug(f"Select query: {query}")
             self.cur.execute(query)
             records = self.cur.fetchall()
+            logger.info("Successfull fetched data from PostgreSQL database...")
             return records
         except Exception as e:
             logger.error(f"Error fetching data from PostgreSQL database: {e}")
             return []
+        
     def insert_bulk_data_into_db(self, query: str, fields: list):
         try:
             if not fields:

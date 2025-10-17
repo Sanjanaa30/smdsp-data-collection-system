@@ -3,10 +3,10 @@ import os
 from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 
-class LoggerFactory:
+class Logger:
 
     """
-    LoggerFactory is responsible for creating and configuring a logger instance
+    Logger is responsible for creating and configuring a logger instance
     based on environment variables.
 
     Environment Variables:
@@ -15,8 +15,8 @@ class LoggerFactory:
         - CHAN_LOG_FILE: File path for the log file if LOG_MODE is FILE. Default is '4chan_crawler.log'.
 
     Usage:
-        >>> logger_factory = LoggerFactory("my_logger")
-        >>> logger = logger_factory.get_logger()
+        >>> logger = Logger("my_logger")
+        >>> logger = logger.get_logger()
         >>> logger.info("This is a log message.")
     """
     

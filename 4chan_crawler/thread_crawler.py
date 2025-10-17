@@ -1,6 +1,11 @@
 from chan_client import ChanClient
-import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
+from utils.logger import Logger
+from constants.constants import CHAN_CRAWLER
+from constants.api_constants import THREADS_JSON
+from urllib.parse import urljoin
+
+logger = Logger(CHAN_CRAWLER).get_logger()
 
 class ThreadCrawler:
     """
@@ -11,7 +16,6 @@ class ThreadCrawler:
     def __init__(self):
         """Initialize the thread crawler with a ChanClient instance."""
         self.client = ChanClient()
-        self.logger = logging.getLogger(__name__)
     
     def get_threads_from_board(self, board: str) -> List[Dict[str, Any]]:
         """
@@ -23,13 +27,13 @@ class ThreadCrawler:
         Returns:
             List of thread dictionaries, empty list if failed
         """
-        self.logger.info(f"Fetching threads from /{board}/ board...")
+        logger.info(f"Fetching threads from {board} board...")
         
         # Make API call to get threads
-        threads_data = self.client.make_request(f"/{board}/threads.json")
+        threads_data = self.client.make_request(urljoin(board, THREADS_JSON))
         
         if threads_data is None:
-            self.logger.error(f"Failed to fetch threads from /{board}/")
+            logger.error(f"No threads found from /{board}/ board")
             return []
         
         # Extract all threads from all pages
@@ -39,8 +43,7 @@ class ThreadCrawler:
         for page in threads_data:
             page_number = page.get('page', 'Unknown')
             threads = page.get('threads', [])
-            
-            self.logger.info(f"Found {len(threads)} threads on page {page_number}")
+            logger.info(f"Found {len(threads)} threads on page {page_number}")
             
             # Add page info to each thread for reference
             for thread in threads:
@@ -48,7 +51,7 @@ class ThreadCrawler:
             
             all_threads.extend(threads)
         
-        self.logger.info(f"Total threads found in /{board}/: {len(all_threads)}")
+        logger.info(f"Total threads found in /{board}/: {len(all_threads)}")
         return all_threads
     
     def print_threads_from_board(self, board: str) -> None:
@@ -116,28 +119,29 @@ class ThreadCrawler:
             if thread.get('replies', 0) >= min_replies
         ]
         
-        self.logger.info(f"Found {len(active_threads)} active threads (>={min_replies} replies) in /{board}/")
+        logger.info(f"Found {len(active_threads)} active threads (>={min_replies} replies) in /{board}/")
         return active_threads
 
 if __name__ == "__main__":
     """
     Entry point - this runs when you execute: python thread_crawler.py
     """
-    print("Starting 4chan Thread Crawler...")
+    logger.info("Starting 4chan Thread Crawler...")
     
     # Create crawler instance
     crawler = ThreadCrawler()
 
-    # Test with /a/ board (you can change this)
     board_name = "a"
-    print(f"\nFetching threads from /{board_name}/ board...")
+    logger.info(f"\nFetching threads from /{board_name}/ board...")
+
+    crawler.get_threads_from_board(board_name)
     
     # Get and print all threads
-    crawler.print_threads_from_board(board_name)
+    # crawler.print_threads_from_board(board_name)
     
-    # Also show active threads
-    print(f"\nActive threads (>=10 replies) in /{board_name}/:")
-    active = crawler.get_active_threads(board_name, min_replies=10)
-    print(f"Found {len(active)} active threads")
+    # # Also show active threads
+    # print(f"\nActive threads (>=10 replies) in /{board_name}/:")
+    # active = crawler.get_active_threads(board_name, min_replies=10)
+    # print(f"Found {len(active)} active threads")
     
-    print("Thread crawler finished!")
+    logger.info("Thread crawler finished!")

@@ -3,12 +3,13 @@ import os
 from typing import Callable, Optional
 
 from dotenv import load_dotenv
-from logger import logger
+from constants.constants import CHAN_CRAWLER
+from utils.logger import Logger
 from pyfaktory import Client, Consumer, Job, Producer
 
 load_dotenv()
 
-
+logger = Logger(CHAN_CRAWLER).get_logger()
 def init_faktory_client(
     role: str,
     queue: str,

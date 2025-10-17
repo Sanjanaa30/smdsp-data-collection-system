@@ -1,8 +1,10 @@
 from reddit_client import RedditClient
-from constants import SUBREDDIT_URL, REDDIT_CRAWLER
-from logger_factory import LoggerFactory
+from constants.api_constants import SUBREDDIT_URL
+from constants.constants import REDDIT_CRAWLER
 
-logger = LoggerFactory(REDDIT_CRAWLER).get_logger()
+from utils.logger import Logger 
+
+logger = Logger(REDDIT_CRAWLER).get_logger()
 redditClient = RedditClient()
 
 

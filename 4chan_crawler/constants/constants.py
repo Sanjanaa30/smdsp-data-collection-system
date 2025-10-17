@@ -1,0 +1,1 @@
+CHAN_CRAWLER = "4chan_crawler"
