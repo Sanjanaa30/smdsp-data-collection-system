@@ -47,7 +47,7 @@ class Logger:
                 fh = RotatingFileHandler(log_file, maxBytes=10_000_000, backupCount=5)
                 fh.setFormatter(formatter)
                 logger.addHandler(fh)
-            else:
+            # else:
                 handler = logging.StreamHandler()
                 handler.setFormatter(formatter)
                 logger.addHandler(handler)

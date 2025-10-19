@@ -1,6 +1,6 @@
-class subreddit:
+class Communities:
     """
-    A class to represent a subreddit from Reddit.
+    A class to represent a Communities from Reddit.
 
     Attributes:
         title (str): The title of the subreddit (e.g., "Home").
