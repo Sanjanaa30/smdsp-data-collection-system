@@ -1,0 +1,11 @@
+2025-10-16 15:27:21,721 - reddit_crawler - INFO - Initialized RedditClient with base URL: https://www.reddit.com
+2025-10-16 15:27:21,721 - reddit_crawler - INFO - Making request to: https://www.reddit.com/subreddits.json
+2025-10-16 15:27:22,632 - reddit_crawler - INFO - Successfully fetched data from /subreddits.json
+2025-10-17 12:34:36,092 - reddit_crawler - INFO - Initialized RedditClient with base URL: https://www.reddit.com
+2025-10-17 12:34:36,093 - reddit_crawler - INFO - Getting reddit subreddit communities
+2025-10-17 12:34:36,093 - reddit_crawler - INFO - Making request to: https://www.reddit.com/subreddits.json
+2025-10-17 12:34:36,425 - reddit_crawler - ERROR - Request failed for https://www.reddit.com/subreddits.json: 429 Client Error: Too Many Requests for url: https://www.reddit.com/subreddits.json
+2025-10-17 12:34:55,095 - reddit_crawler - INFO - Initialized RedditClient with base URL: https://www.reddit.com
+2025-10-17 12:34:55,096 - reddit_crawler - INFO - Getting reddit subreddit communities
+2025-10-17 12:34:55,096 - reddit_crawler - INFO - Making request to: https://www.reddit.com/subreddits.json
+2025-10-17 12:34:55,293 - reddit_crawler - ERROR - Request failed for https://www.reddit.com/subreddits.json: 429 Client Error: Too Many Requests for url: https://www.reddit.com/subreddits.json
