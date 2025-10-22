@@ -1,6 +1,6 @@
 import requests
 from typing import Dict, Any, Optional
-from constants.api_constants import FOURCHAN_BASE_URL
+from constants.api_constants import FOURCHAN_BASE_URL, THREADS_JSON
 from constants.constants import CHAN_CRAWLER
 from utils.logger import Logger
 from urllib.parse import urljoin
@@ -36,13 +36,11 @@ class ChanClient:
             return None
     
     def get_boards(self) -> Optional[Dict[Any, Any]]:
-
+        """Fetch all 4chan boards."""
         return self.make_request("/boards.json")
     
-    def get_catalog(self, board: str) -> Optional[Dict[Any, Any]]:
-
-        return self.make_request(f"/{board}/catalog.json")
-    
-    def get_thread(self, board: str, thread_id: int) -> Optional[Dict[Any, Any]]:
-
-        return self.make_request(f"/{board}/thread/{thread_id}.json")
+    def get_threads(self, board: str) -> Optional[Dict[Any, Any]]:
+        """
+        Fetch all threads from a specific board.
+        """
+        return self.make_request(f"/{board}/{THREADS_JSON}")

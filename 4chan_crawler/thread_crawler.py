@@ -1,11 +1,22 @@
+import datetime
+from dotenv import load_dotenv
+from constants.plsql_constants import (
+    INSERT_BULK_THREAD_DATA_QUERY, 
+    SELECT_THREAD_IDS_QUERY
+)
+from utils.plsql import PLSQL
 from chan_client import ChanClient
 from typing import List, Dict, Any
 from utils.logger import Logger
+from utils.faktory import init_faktory_client
 from constants.constants import CHAN_CRAWLER
 from constants.api_constants import THREADS_JSON
-from urllib.parse import urljoin
+
+
+load_dotenv()
 
 logger = Logger(CHAN_CRAWLER).get_logger()
+
 
 class ThreadCrawler:
     """
@@ -20,17 +31,11 @@ class ThreadCrawler:
     def get_threads_from_board(self, board: str) -> List[Dict[str, Any]]:
         """
         Fetch all threads from a specific board.
-        
-        Args:
-            board: Board name (e.g., 'pol', 'g', 'a')
-            
-        Returns:
-            List of thread dictionaries, empty list if failed
         """
         logger.info(f"Fetching threads from {board} board...")
         
-        # Make API call to get threads
-        threads_data = self.client.make_request(urljoin(board, THREADS_JSON))
+        # Make API call to get threads (use THREADS_JSON as-is)
+        threads_data = self.client.get_threads(board)
         
         if threads_data is None:
             logger.error(f"No threads found from /{board}/ board")
@@ -53,95 +58,76 @@ class ThreadCrawler:
         
         logger.info(f"Total threads found in /{board}/: {len(all_threads)}")
         return all_threads
+
+
+def fetch_and_save_threads(board: str = "pol"):
+    """
+    Job handler function to fetch and save threads from a specific board.
+    This function is intended to be called by the Faktory consumer.
+    """
+    crawler = ThreadCrawler()
+    threads = crawler.get_threads_from_board(board)
+    plsql = PLSQL()
     
-    def print_threads_from_board(self, board: str) -> None:
-        """
-        Fetch and print all threads from a board in a formatted way.
-        
-        Args:
-            board: Board name (e.g., 'pol', 'g', 'a')
-        """
-        threads = self.get_threads_from_board(board)
-        
-        if not threads:
-            print(f"No threads found in /{board}/ or API call failed!")
-            return
-        
-        print("\n" + "="*80)
-        print(f"THREADS FROM /{board.upper()}/ BOARD ({len(threads)} total threads)")
-        print("="*80)
-        
-        for i, thread in enumerate(threads[:20], 1):  # Show first 20 threads
-            thread_id = thread.get('no', 'N/A')
-            last_modified = thread.get('last_modified', 'N/A')
-            replies = thread.get('replies', 0)
-            images = thread.get('images', 0)
-            page = thread.get('page', 'N/A')
-            
-            # Get thread subject/comment preview if available
-            subject = thread.get('sub', '')
-            comment = thread.get('com', '')
-            
-            # Clean up HTML tags and truncate
-            if comment:
-                import re
-                comment = re.sub('<[^<]+?>', '', comment)  # Remove HTML tags
-                comment = comment[:100] + '...' if len(comment) > 100 else comment
-            
-            print(f"{i:2d}. Thread #{thread_id} (Page {page})")
-            if subject:
-                print(f"    Subject: {subject}")
-            if comment:
-                print(f"    Preview: {comment}")
-            print(f"    Replies: {replies}, Images: {images}, Last Modified: {last_modified}")
-            print()
-        
-        if len(threads) > 20:
-            print(f"... and {len(threads) - 20} more threads")
-        
-        print("="*80)
+    current_thread_ids_raw = plsql.get_data_from(SELECT_THREAD_IDS_QUERY, (board,))
+    # Convert to set for fast lookup  
+    current_thread_ids = {row[0] for row in current_thread_ids_raw} 
+    logger.debug(f"Current thread IDs for /{board}/: {len(current_thread_ids)}")
     
-    def get_active_threads(self, board: str, min_replies: int = 5) -> List[Dict[str, Any]]:
-        """
-        Get only active threads (with minimum number of replies).
-        
-        Args:
-            board: Board name (e.g., 'pol', 'g', 'a')
-            min_replies: Minimum number of replies to consider thread active
+    if not threads:
+        logger.warning(f"No threads to save from /{board}/")
+        return
+    
+    # Prepare data for bulk insert
+    thread_records = []
+    
+    for thread in threads:
+        thread_id = thread.get('no')
+        if thread_id not in current_thread_ids:  # Only save new threads
+            # Map 4chan API fields to database columns
+            thread_title = thread.get('sub', None)           # Thread subject/title
+            com = thread.get('com', None)                    # Comment text
+            created_time = thread.get('time')                # Unix timestamp when created
+            last_modified = thread.get('last_modified')      # Unix timestamp of last activity
+            replies = thread.get('replies', 0)               # Number of replies
+            semantic_url = thread.get('semantic_url', None)  # Readable URL
+            images = thread.get('images', 0)                 # Number of images
             
-        Returns:
-            List of active thread dictionaries
-        """
-        all_threads = self.get_threads_from_board(board)
-        
-        active_threads = [
-            thread for thread in all_threads 
-            if thread.get('replies', 0) >= min_replies
-        ]
-        
-        logger.info(f"Found {len(active_threads)} active threads (>={min_replies} replies) in /{board}/")
-        return active_threads
+            thread_records.append((
+                thread_id,      # thread_id
+                board,          # board_code
+                thread_title,   # thread_title
+                com,            # com
+                created_time,   # created_time
+                last_modified,  # last_modified
+                replies,        # replies
+                semantic_url,   # semantic_url
+                images          # images (created_at will be auto-generated)
+            ))
+    
+    if len(thread_records) == 0:
+        logger.info(f"No new threads found for /{board}/")
+    else:
+        logger.info(f"New threads found for /{board}/: {len(thread_records)}")
+        plsql.insert_bulk_data_into_db(INSERT_BULK_THREAD_DATA_QUERY, thread_records)
+        logger.info(f"Inserted {len(thread_records)} threads into database from /{board}/")
+    
+    plsql.close_connection()
+    
+    # Schedule next job (runs every 5 minutes for fresh thread data)
+    init_faktory_client(
+        role="producer",
+        jobtype="enqueue_crawl_threads",
+        queue="enqueue-crawl-threads", 
+        delayedTimer=datetime.timedelta(minutes=5),
+    )
+
 
 if __name__ == "__main__":
-    """
-    Entry point - this runs when you execute: python thread_crawler.py
-    """
     logger.info("Starting 4chan Thread Crawler...")
-    
-    # Create crawler instance
-    crawler = ThreadCrawler()
-
-    board_name = "a"
-    logger.info(f"\nFetching threads from /{board_name}/ board...")
-
-    crawler.get_threads_from_board(board_name)
-    
-    # Get and print all threads
-    # crawler.print_threads_from_board(board_name)
-    
-    # # Also show active threads
-    # print(f"\nActive threads (>=10 replies) in /{board_name}/:")
-    # active = crawler.get_active_threads(board_name, min_replies=10)
-    # print(f"Found {len(active)} active threads")
-    
-    logger.info("Thread crawler finished!")
+    init_faktory_client(
+        role="consumer",
+        queue="enqueue-crawl-threads",
+        jobtype="enqueue_crawl_threads",
+        fn=fetch_and_save_threads,
+    )
