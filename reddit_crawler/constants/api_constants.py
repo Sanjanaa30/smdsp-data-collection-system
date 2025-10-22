@@ -1,2 +1,2 @@
-SUBREDDIT_URL = "/subreddits.json"
-REDDIT_BASE_URL = "https://www.reddit.com"
+SUBREDDIT_URL = "subreddits"
+REDDIT_BASE_URL = "https://api.reddit.com"

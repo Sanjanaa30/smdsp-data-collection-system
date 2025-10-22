@@ -15,7 +15,8 @@ class Communities:
             - Strong language
             - Other adult or explicit material
     """
-    def __init__(self, title, subscribers, description, lang, url, created_utc, icon_img, over18):
+    def __init__(self, unique_name, title, subscribers, description, lang, url, created_utc, icon_img, over18):
+        self.unique_name = unique_name
         self.title = title
         self.subscribers = subscribers
         self.description = description
@@ -33,6 +34,7 @@ class Communities:
             str: A readable summary of the subreddit instance.
         """
         return (
+            f"Unique Name : {self.unique_name}\n"
             f"Subreddit Title : {self.title}\n"
             f"Subscribers     : {self.subscribers}\n"
             f"Language        : {self.lang}\n"
@@ -41,3 +43,22 @@ class Communities:
             f"NSFW            : {'Yes' if self.over18 else 'No'}\n"
             f"Description     : {self.description}"
         )
+    
+    def to_tuple(self) -> tuple:
+        """
+        Returns the community data as a tuple for database insertion.
+        """
+        return (
+            self.unique_name,
+            self.title,
+            self.subscribers,
+            self.description,
+            self.lang,
+            self.url,
+            self.created_utc,
+            self.icon_img,
+            self.over18
+        )
+    
+    def get_unique_name(self):
+        return self.unique_name
