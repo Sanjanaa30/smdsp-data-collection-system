@@ -111,14 +111,14 @@ def get_list_of_subreddit():
                 logger.info("Sleeping for 15 seconds before next request")
                 time.sleep(15)
 
-        if not finished:
-            logger.info("Completed 4 requests this minute, waiting until next minute")
-            # Sleep to complete the 60 second minute cycle,
-            # subtracting time spent on 4 requests + sleeps
-            # Each request + sleep ~15 seconds * 3 intervals = 45 seconds approx.
-            # You can adjust this if needed.
-            time.sleep(15)
-            finished = True
+        # if not finished:
+        #     logger.info("Completed 4 requests this minute, waiting until next minute")
+        #     # Sleep to complete the 60 second minute cycle,
+        #     # subtracting time spent on 4 requests + sleeps
+        #     # Each request + sleep ~15 seconds * 3 intervals = 45 seconds approx.
+        #     # You can adjust this if needed.
+        #     time.sleep(15)
+        #     finished = True
 
     logger.info("Finished fetching all SubReddits")
     logger.info("Scheduling Job for collecting list of subreddits")
