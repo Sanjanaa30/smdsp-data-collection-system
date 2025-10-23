@@ -8,7 +8,8 @@ FAKTORY_CONSUMER_ROLE = "consumer"
 FAKTORY_PRODUCER_ROLE = "producer"
 
 # ITEMS TO BE COLLECTED
-COMMUNITY_FIELDS = [
+SUBREDDIT_FIELDS = [
+    "name",
     "title",
     "subscribers",
     "description",
@@ -16,7 +17,6 @@ COMMUNITY_FIELDS = [
     "url",
     "created_utc",
     "icon_img",
-    "community_icon",
     "over18",
 ]
 

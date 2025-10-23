@@ -1,11 +1,11 @@
 # QUERIES
 
-# --------------------------Communities--------------------------
-# QUERY TO INSERT BULK DATA INTO COMMUNITIES TABLLE
-BULK_INSERT_COMMUNITIES = "INSERT INTO communities (unique_name, title, subscribers, description, lang, url, created_utc, icon_img, over18) VALUES %s"
+# --------------------------Subreddit--------------------------
+# QUERY TO INSERT BULK DATA INTO Subreddit TABLLE
+BULK_INSERT_SUBREDDIT = "INSERT INTO Subreddit (unique_name, title, subscribers, description, lang, url, created_utc, icon_img, over18) VALUES %s"
 
-# QUERY TO SELECT unique_name FROM COMMUNITIES TABLLE
-SELECT_UNIQUE_NAME_COMMUNITY = "SELECT unique_name FROM communities"
+# QUERY TO SELECT unique_name FROM Subreddit TABLLE
+SELECT_UNIQUE_NAME_SUBREDDIT = "SELECT unique_name FROM Subreddit"
 
 # --------------------------Posts--------------------------
 BULK_INSERT_POSTS = "INSERT INTO posts (unique_name, author_fullname, author, title, subreddit, hidden, thumbnail, over_18, edited, created_at, id, is_video, post_details) VALUES %s"

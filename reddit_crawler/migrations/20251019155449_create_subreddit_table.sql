@@ -1,8 +1,8 @@
--- Table: communities
+-- Table: Subreddit
 -- Stores basic metadata about subreddits on Reddit.
 
-CREATE TABLE communities (
-    id SERIAL PRIMARY KEY,                       -- Unique ID for each community
+CREATE TABLE Subreddit (
+    id SERIAL PRIMARY KEY,                       -- Unique ID for each subreddit
     unique_name TEXT Unique,                     -- This is a globally unique identifier for a subreddit
     title TEXT NOT NULL,                         -- Title of the subreddit (e.g., "Home")
     subscribers INTEGER NOT NULL DEFAULT 0,      -- Number of users subscribed

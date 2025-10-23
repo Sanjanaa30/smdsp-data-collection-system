@@ -106,28 +106,28 @@ is_video:This indicates whether the post is a video or not.
 subreddit": "technology",
 
 
-Main command to start the community crawler
+Main command to start the subreddit crawler
 
-# Update all new communities
-python cold_start_crawler.py --update-new-communities
+# Update all new Subreddit
+python cold_start_crawler.py --update-new-Subreddit
 
-# Collect posts for one community
+# Collect posts for one subreddit
 python cold_start_crawler.py --collect-posts "Technology"
 
-# Collect posts for multiple communities
+# Collect posts for multiple Subreddit
 python cold_start_crawler.py --collect-posts "Technology" "geopolitics" "Outdoors"
 
 # Show help
 python cold_start_crawler.py --help
 
 
-# Start Faktory consumer for updating new communities
-python crawler.py --update-new-communities
+# Start Faktory consumer for updating new Subreddit
+python crawler.py --update-new-Subreddit
 
-# Start Faktory consumer for collecting posts from a single community
+# Start Faktory consumer for collecting posts from a single subreddit
 python crawler.py --collect-posts "Technology"
 
-# Start Faktory consumer for multiple communities
+# Start Faktory consumer for multiple Subreddit
 python crawler.py --collect-posts "Tech" "Science" "Gaming"
 
 # Show help

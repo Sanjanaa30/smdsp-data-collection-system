@@ -1,6 +1,6 @@
-class Communities:
+class Subreddit:
     """
-    A class to represent a Communities from Reddit.
+    A class to represent a Subreddit from Reddit.
 
     Attributes:
         title (str): The title of the subreddit (e.g., "Home").
@@ -15,8 +15,8 @@ class Communities:
             - Strong language
             - Other adult or explicit material
     """
-    def __init__(self, unique_name, title, subscribers, description, lang, url, created_utc, icon_img, over18):
-        self.unique_name = unique_name
+    def __init__(self, name, title, subscribers, description, lang, url, created_utc, icon_img, over18):
+        self.unique_name = name
         self.title = title
         self.subscribers = subscribers
         self.description = description
@@ -46,7 +46,7 @@ class Communities:
     
     def to_tuple(self) -> tuple:
         """
-        Returns the community data as a tuple for database insertion.
+        Returns the subreddit data as a tuple for database insertion.
         """
         return (
             self.unique_name,
