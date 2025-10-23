@@ -14,7 +14,19 @@ Social Media
     - docker stop <container_id>
 4. Removed the container
     - docker rm <container_id>
+5. Docker restart
+    - docker restart timescaledb
 
 **Linux**
 1. Faktory is listed and 7419 and 7420 are bound to 0.0.0.0
     - sudo ss -tuln | grep 7420
+
+**Creating new User**
+- sudo adduser <user_name>
+- SMDSP@bing123
+
+**Switching User**
+- sudo su - <user_name>
+
+**make user sudoers**
+sudo usermod -aG sudo <user_name>

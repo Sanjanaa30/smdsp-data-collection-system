@@ -104,3 +104,31 @@ is_robot_indexable: This field determines whether the post is robot indexable, m
 author: The Reddit username of the person who posted the content.
 is_video:This indicates whether the post is a video or not.
 subreddit": "technology",
+
+
+Main command to start the community crawler
+
+# Update all new communities
+python cold_start_crawler.py --update-new-communities
+
+# Collect posts for one community
+python cold_start_crawler.py --collect-posts "Technology"
+
+# Collect posts for multiple communities
+python cold_start_crawler.py --collect-posts "Technology" "geopolitics" "Outdoors"
+
+# Show help
+python cold_start_crawler.py --help
+
+
+# Start Faktory consumer for updating new communities
+python crawler.py --update-new-communities
+
+# Start Faktory consumer for collecting posts from a single community
+python crawler.py --collect-posts "Technology"
+
+# Start Faktory consumer for multiple communities
+python crawler.py --collect-posts "Tech" "Science" "Gaming"
+
+# Show help
+python crawler.py --help

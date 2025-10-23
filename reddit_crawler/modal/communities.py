@@ -60,5 +60,5 @@ class Communities:
             self.over18
         )
     
-    def get_unique_name(self):
+    def get_unique_identifer(self):
         return self.unique_name

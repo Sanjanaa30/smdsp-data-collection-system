@@ -4,7 +4,6 @@ from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 
 class Logger:
-
     """
     Logger is responsible for creating and configuring a logger instance
     based on environment variables.
@@ -19,9 +18,10 @@ class Logger:
         >>> logger = logger.get_logger()
         >>> logger.info("This is a log message.")
     """
-    
-    def __init__(self, name):
+
+    def __init__(self, name, file_name: str = ''):
         load_dotenv()
+        self.file_name = file_name
         self.logger = self._set_config(name)
 
     def _set_config(self, name):
@@ -32,19 +32,30 @@ class Logger:
         numeric_level = getattr(logging, log_level_str, logging.INFO)
         logger.setLevel(numeric_level)
 
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
 
         log_mode = os.getenv("LOG_MODE", "STREAM").upper()
 
         if not logger.handlers:  # Prevent duplicate handlers
             if log_mode == "FILE":
-                log_file = os.getenv("LOG_FILE", "default.log")
-                log_dir = os.path.dirname(log_file)
+                if self.file_name != '':
+                     print("truee")
+                     log_dir = os.getenv("LOG_DIR", "default.log")
+                     print(log_dir)
+                     print(self.file_name)
+                     log_file = f"{log_dir}/{self.file_name}"
+                     print(log_file)
+                     log_dir = os.path.dirname(log_file)
+                else:
+                    log_file = os.getenv("LOG_FILE", "default.log")
+                    log_dir = os.path.dirname(log_file)
 
                 if log_dir:
                     os.makedirs(log_dir, exist_ok=True)
 
-                fh = RotatingFileHandler(log_file, maxBytes=10_000_000, backupCount=5)
+                fh = RotatingFileHandler(log_file, maxBytes=10_000_000, backupCount=5, encoding="utf-8")
                 fh.setFormatter(formatter)
                 logger.addHandler(fh)
             else:

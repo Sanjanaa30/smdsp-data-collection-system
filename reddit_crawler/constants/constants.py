@@ -1,6 +1,7 @@
 # Logger
 REDDIT_CRAWLER = "reddit_crawler"
-
+COLD_START_CRAWLER="cold_start_crawler"
+LOG_FILE_NAME_COLD_START_CRAWLER="cold_start_crawler.log"
 # FAKTORY CONFIGURATIONS
 FAKTORY_SERVER_URL = "FAKTORY_SERVER_URL"
 FAKTORY_CONSUMER_ROLE = "consumer"
@@ -31,7 +32,10 @@ POST_FIELDS = [
     "edited",
     "created",
     "id",
-    "is_video",
+    "is_video"
+]
+
+POST_DETAILED_FIELDS = [
     "is_original_content",
     "pwls",
     "num_comments",
@@ -46,5 +50,5 @@ POST_FIELDS = [
     "gilded",
     "url_overridden_by_dest",
     "removal_reason",
-    "is_robot_indexable",
+    "is_robot_indexable"
 ]

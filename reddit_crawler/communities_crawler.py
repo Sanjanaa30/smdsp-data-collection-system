@@ -5,7 +5,7 @@ from constants.constants import REDDIT_CRAWLER, FAKTORY_CONSUMER_ROLE, COMMUNITY
 from modal.communities import Communities
 from utils.logger import Logger
 from utils.plsql import PLSQL
-from constants.plsql_constants import BULK_INSERT_COMMUNITIES, SELECT_unique_name_QUERY
+from constants.plsql_constants import BULK_INSERT_COMMUNITIES, SELECT_UNIQUE_NAME_COMMUNITY
 import json
 from utils.faktory import init_faktory_client
 
@@ -80,12 +80,12 @@ def store_communities_in_db(communities: list):
     Uses bulk insert query via PLSQL helper.
     """
     plsql = PLSQL()
-    unique_subreddit_in_db = plsql.get_data_from(SELECT_unique_name_QUERY)
+    unique_subreddit_in_db = plsql.get_data_from(SELECT_UNIQUE_NAME_COMMUNITY)
     unique_subreddit_names = {row[0] for row in unique_subreddit_in_db}
     communities_data = [
         community.to_tuple()
         for community in communities
-        if community.get_unique_name() not in unique_subreddit_names
+        if community.get_unique_identifer() not in unique_subreddit_names
     ]
     if len(communities_data) == 0:
         logger.info("No New Communities Found")

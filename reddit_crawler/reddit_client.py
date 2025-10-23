@@ -44,13 +44,16 @@ class RedditClient:
 
     def make_request(self, endpoint: str, params: dict[str, str] = None):
         url = urljoin(self.base_url, endpoint)
-        # url = f"{self.base_url}{endpoint}"
-        # params: Dict[str, int] = {}
-        # if limit is not None:
-        #     params["limit"] = limit
+        params = params or {}
+
+        from requests.models import PreparedRequest
+        req = PreparedRequest()
+        req.prepare_url(url, params)
+        logger.debug(f"Final prepared request URL: {req.url}")
 
         logger.info("Making request to: %s", url)
-        logger.debug(f"Params: {params}")
+        logger.debug("Params: %s", params)
+
         for attempt in range(1, self.max_retries + 1):
             try:
                 response = self.session.get(
