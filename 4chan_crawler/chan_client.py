@@ -1,6 +1,7 @@
+import json
 import requests
 from typing import Dict, Any, Optional
-from constants.api_constants import FOURCHAN_BASE_URL, THREADS_JSON
+from constants.api_constants import CATALOG_JSON, FOURCHAN_BASE_URL, THREADS_JSON
 from constants.constants import CHAN_CRAWLER
 from utils.logger import Logger
 from urllib.parse import urljoin
@@ -41,6 +42,23 @@ class ChanClient:
     
     def get_threads(self, board: str) -> Optional[Dict[Any, Any]]:
         """
-        Fetch all threads from a specific board.
+        Fetch all threads from a specific board using threads.json
         """
         return self.make_request(f"/{board}/{THREADS_JSON}")
+    
+    def get_catalog(self, board: str) -> Optional[Dict[Any, Any]]:
+        """
+        Fetch catalog (thread overview) from a specific board using catalog.json
+        """
+        # For testing purposes, using mock data # return self.make_request(f"/{board}/catalog.json")
+        # response = "[{\"page\":1,\"threads\":[{\"no\":503281217,\"last_modified\":1745613336,\"replies\":1},{\"no\":519496220,\"last_modified\":1761097906,\"replies\":3},{\"no\":519492417,\"last_modified\":1761097904,\"replies\":203},{\"no\":519486692,\"last_modified\":1761097903,\"replies\":22},{\"no\":519490182,\"last_modified\":1761097902,\"replies\":37},{\"no\":519485421,\"last_modified\":1761097902,\"replies\":260},{\"no\":519494250,\"last_modified\":1761097900,\"replies\":10}]}]"
+        # response = json.loads(response)
+        # return response
+        return self.make_request(f"/{board}/{CATALOG_JSON}")
+    
+
+    def get_thread_posts(self, board: str, thread_id: int) -> Optional[Dict[Any, Any]]:
+        """
+        Fetch all posts from a specific thread using thread/{id}.json
+        """
+        return self.make_request(f"/{board}/thread/{thread_id}.json")

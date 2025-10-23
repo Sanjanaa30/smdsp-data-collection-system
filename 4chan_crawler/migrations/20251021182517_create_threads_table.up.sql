@@ -1,18 +1,32 @@
 -- Add up migration script here
+--using https://a.4cdn.org/{board}/catalog.json
 
 -- Table: threads
 -- Purpose: Stores 4chan thread data.
+    -- Track active threads from catalog.json
+    -- Monitor thread activity and status
+    -- Fast queries for thread discovery
 
 CREATE TABLE threads (
-    thread_id BIGINT NOT NULL PRIMARY KEY,      -- Unique identifier for the thread
-    board_code TEXT NOT NULL,                   -- The board the thread belongs to
-    thread_title TEXT,                          -- The title of the thread (can be NULL)
-    com TEXT,                                   -- The comment text of the thread
-    created_time INTEGER,              -- Unix timestamp when thread was created
-    last_modified INTEGER,                      -- Unix timestamp of last activity
-    replies INTEGER NOT NULL DEFAULT 0,         -- Total number of replies
-    semantic_url TEXT,                          -- Readable thread link
-    images INTEGER DEFAULT 0,                   -- Number of images in thread
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- When record was inserted
-    FOREIGN KEY (board_code) REFERENCES boards(board_code)  -- Link to boards table
+    thread_id BIGINT NOT NULL PRIMARY KEY,      -- thread ID (no.)
+    board_code TEXT NOT NULL,                   -- board identifier
+    thread_title TEXT,                          -- thread title (subject)
+    comment_texts TEXT,                         -- comment texts
+    poster_name TEXT,                           -- poster name (name)
+    created_time BIGINT,                        -- creation time (Unix timestamp)
+    last_modified BIGINT,                       -- last modified time (Unix timestamp)
+    replies INTEGER DEFAULT 0,                  -- no. of replies
+    images INTEGER DEFAULT 0,                   -- no. of images
+    semantic_url TEXT,                          -- semantic_url
+    is_sticky BOOLEAN DEFAULT FALSE,            -- sticky 
+    is_closed BOOLEAN DEFAULT FALSE,            -- closed
+    country_code TEXT,                          -- country
+    has_media BOOLEAN DEFAULT FALSE,            -- derived from filename != null
+    
+    -- Thread limits and metadata
+    bump_limit INTEGER DEFAULT 0,               -- bumplimit
+    image_limit INTEGER DEFAULT 0,              -- imagelimit  
+
+    last_seen_in_catalog TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (board_code) REFERENCES boards(board_code)
 );
