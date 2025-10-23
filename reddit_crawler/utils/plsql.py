@@ -3,16 +3,17 @@ import os
 import psycopg2
 from pathlib import Path
 from dotenv import load_dotenv
-from logger import logger
+from utils.logger import Logger
 from psycopg2.extras import execute_values
+from constants.constants import REDDIT_CRAWLER
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")        
 
-
+logger = Logger(REDDIT_CRAWLER).get_logger()
 class PLSQL:
     def __init__(self):
         logger.info("Connecting to PostgreSQL database...")
-        DATABASE_URL = os.environ.get("CHAN_DATABASE_URL")
+        DATABASE_URL = os.environ.get("DATABASE_URL")
         logger.debug(f"DATABASE_URL: {DATABASE_URL}")
         self.conn = psycopg2.connect(dsn=DATABASE_URL)
         self.cur = self.conn.cursor()

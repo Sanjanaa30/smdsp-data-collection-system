@@ -8,7 +8,7 @@ from constants.plsql_constants import (
     INSERT_BULK_BOARD_DATA_QUERY,
     SELECT_BOARD_CODE_QUERY,
 )
-from constants.constants import CHAN_CRAWLER
+from constants.constants import CHAN_CRAWLER, FAKTORY_CONSUMER_ROLE, FAKTORY_PRODUCER_ROLE
 from dotenv import load_dotenv
 from utils.faktory import init_faktory_client
 from utils.logger import Logger
@@ -104,7 +104,7 @@ def fetch_and_save_boards():
         plsql.close_connection()
 
     init_faktory_client(
-        role="producer",
+        role=FAKTORY_PRODUCER_ROLE,
         jobtype="enqueue_crawl_boards",
         queue="enqueue-crawl-boards",
         delayedTimer=datetime.timedelta(days=30),
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     """
     logger.info("Starting 4chan Board Crawler...")
     init_faktory_client(
-        role="consumer",
+        role=FAKTORY_CONSUMER_ROLE,
         queue="enqueue-crawl-boards",
         jobtype="enqueue_crawl_boards",
         fn=fetch_and_save_boards,

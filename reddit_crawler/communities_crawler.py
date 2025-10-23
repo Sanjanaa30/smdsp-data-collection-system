@@ -1,24 +1,151 @@
+import time
 from reddit_client import RedditClient
 from constants.api_constants import SUBREDDIT_URL
-from constants.constants import REDDIT_CRAWLER
+from constants.constants import REDDIT_CRAWLER, FAKTORY_CONSUMER_ROLE, COMMUNITY_FIELDS
 from modal.communities import Communities
 from utils.logger import Logger
+from utils.plsql import PLSQL
+from constants.plsql_constants import BULK_INSERT_COMMUNITIES, SELECT_UNIQUE_NAME_COMMUNITY
+import json
+from utils.faktory import init_faktory_client
 
 logger = Logger(REDDIT_CRAWLER).get_logger()
-redditClient = RedditClient()
+reddit_client = RedditClient()
+
+
+def fetch_subreddit_communities(after=None) -> tuple[list[Communities], str | None]:
+    """
+    Fetches subreddit data from Reddit API starting from `after` cursor.
+    Returns a list of Communities objects and next page cursor.
+    """
+    params = {"limit": 100}
+    if after:
+        params["after"] = after
+
+    # Test data
+
+    # response = '{\n    "kind": "Listing",\n    "data": {\n        "after": "t5_2cneq",\n        "dist": 25,\n        "modhash": "",\n        "geo_filter": "",\n        "children": [\n            {\n                "kind": "t5",\n                "data": {\n                    "user_flair_background_color": null,\n                    "submit_text_html": null,\n                    "restrict_posting": true,\n                    "user_is_banned": null,\n                    "free_form_reports": true,\n                    "wiki_enabled": false,\n                    "user_is_muted": null,\n                    "user_can_flair_in_sr": null,\n                    "display_name": "Home",\n                    "header_img": null,\n                    "title": "Home",\n                    "original_content_tag_enabled": false,\n                    "allow_galleries": true,\n                    "icon_size": null,\n                    "primary_color": "",\n                    "icon_img": "",\n                    "display_name_prefixed": "r/Home",\n                    "public_traffic": false,\n                    "subscribers": 358133,\n                    "user_flair_richtext": [],\n                    "videostream_links_count": 0,\n                    "name": "t5_2qs0k",\n                    "quarantine": false,\n                    "hide_ads": false,\n                    "prediction_leaderboard_entry_type": 2,\n                    "emojis_enabled": false,\n                    "advertiser_category": "",\n                    "public_description": "",\n                    "comment_score_hide_mins": 0,\n                    "allow_predictions": false,\n                    "user_has_favorited": null,\n                    "user_flair_template_id": null,\n                    "community_icon": "",\n                    "banner_background_image": "",\n                    "header_title": "",\n                    "community_reviewed": true,\n                    "submit_text": "",\n                    "description_html": "&lt;!-- SC_OFF --&gt;&lt;div class=\\"md\\"&gt;&lt;p&gt;Everything home related: interior design, home improvement, architecture.&lt;/p&gt;\\n\\n&lt;h2&gt;&lt;strong&gt;Related subreddits&lt;/strong&gt;&lt;/h2&gt;\\n\\n&lt;ul&gt;\\n&lt;li&gt;&lt;a href=\\"http://www.reddit.com/r/interiordesign\\"&gt;/r/InteriorDesign&lt;/a&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;a href=\\"http://www.reddit.com/r/architecture\\"&gt;/r/architecture&lt;/a&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;a href=\\"http://www.reddit.com/r/houseporn\\"&gt;/r/houseporn&lt;/a&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;a href=\\"http://www.reddit.com/r/roomporn\\"&gt;/r/roomporn&lt;/a&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;a href=\\"http://www.reddit.com/r/designmyroom\\"&gt;/r/designmyroom&lt;/a&gt;&lt;/li&gt;\\n&lt;/ul&gt;\\n&lt;/div&gt;&lt;!-- SC_ON --&gt;",\n                    "spoilers_enabled": true,\n                    "comment_contribution_settings": {\n                        "allowed_media_types": null\n                    },\n                    "allow_talks": false,\n                    "header_size": null,\n                    "user_flair_position": "right",\n                    "all_original_content": false,\n                    "has_menu_widget": false,\n                    "is_enrolled_in_new_modmail": null,\n                    "key_color": "",\n                    "can_assign_user_flair": true,\n                    "created": 1232850357.0,\n                    "wls": 6,\n                    "show_media_preview": true,\n                    "submission_type": "any",\n                    "user_is_subscriber": null,\n                    "allowed_media_in_comments": [],\n                    "allow_videogifs": true,\n                    "should_archive_posts": false,\n                    "user_flair_type": "text",\n                    "allow_polls": true,\n                    "collapse_deleted_comments": false,\n                    "emojis_custom_size": null,\n                    "public_description_html": null,\n                    "allow_videos": true,\n                    "is_crosspostable_subreddit": false,\n                    "suggested_comment_sort": null,\n                    "should_show_media_in_comments_setting": true,\n                    "can_assign_link_flair": true,\n                    "allow_prediction_contributors": false,\n                    "submit_text_label": "",\n                    "link_flair_position": "right",\n                    "user_sr_flair_enabled": null,\n                    "user_flair_enabled_in_sr": false,\n                    "allow_discovery": true,\n                    "accept_followers": true,\n                    "user_sr_theme_enabled": true,\n                    "link_flair_enabled": true,\n                    "disable_contributor_requests": false,\n                    "subreddit_type": "public",\n                    "notification_level": null,\n                    "banner_img": "",\n                    "user_flair_text": null,\n                    "banner_background_color": "",\n                    "show_media": true,\n                    "id": "2qs0k",\n                    "user_is_contributor": null,\n                    "over18": false,\n                    "description": "Everything home related: interior design, home improvement, architecture.\\n\\n**Related subreddits**\\n--------------------------\\n* [/r/InteriorDesign](http://www.reddit.com/r/interiordesign)\\n* [/r/architecture](http://www.reddit.com/r/architecture)\\n* [/r/houseporn](http://www.reddit.com/r/houseporn)\\n* [/r/roomporn](http://www.reddit.com/r/roomporn)\\n* [/r/designmyroom](http://www.reddit.com/r/designmyroom)",\n                    "submit_link_label": "",\n                    "user_flair_text_color": null,\n                    "restrict_commenting": false,\n                    "user_flair_css_class": null,\n                    "allow_images": true,\n                    "lang": "en",\n                    "url": "/r/Home/",\n                    "created_utc": 1232850357.0,\n                    "banner_size": null,\n                    "mobile_banner_image": "",\n                    "user_is_moderator": null,\n                    "allow_predictions_tournament": false\n                }\n            },\n            {\n                "kind": "t5",\n                "data": {\n                    "user_flair_background_color": null,\n                    "submit_text_html": "&lt;!-- SC_OFF --&gt;&lt;div class=\\"md\\"&gt;&lt;p&gt;&lt;strong&gt;AskReddit is all about DISCUSSION. Your post needs to inspire discussion, ask an open-ended question that prompts redditors to share ideas or opinions.&lt;/strong&gt;&lt;/p&gt;\\n\\n&lt;p&gt;&lt;strong&gt;Questions need to be neutral and the question alone.&lt;/strong&gt; Any opinion or answer must go as a reply to your question, this includes examples or any kind of story about you. This is so that all responses will be to your question, and there&amp;#39;s nothing else to respond to. Opinionated posts are forbidden.&lt;/p&gt;\\n\\n&lt;ul&gt;\\n&lt;li&gt;If your question has a factual answer, try &lt;a href=\\"/r/answers\\"&gt;r/answers&lt;/a&gt;.&lt;/li&gt;\\n&lt;li&gt;If you are trying to find out about something or get an explanation, try &lt;a href=\\"/r/explainlikeimfive\\"&gt;r/explainlikeimfive&lt;/a&gt;&lt;/li&gt;\\n&lt;li&gt;If your question has a limited number of responses, then it&amp;#39;s not suitable.&lt;/li&gt;\\n&lt;li&gt;If you&amp;#39;re asking for any kind of advice, then it&amp;#39;s not suitable.&lt;/li&gt;\\n&lt;li&gt;If you feel the need to add an example in order for your question to make sense then you need to re-word your question.&lt;/li&gt;\\n&lt;li&gt;If you&amp;#39;re explaining why you&amp;#39;re asking the question, you need to stop.&lt;/li&gt;\\n&lt;/ul&gt;\\n\\n&lt;p&gt;You can always ask where to post in &lt;a href=\\"/r/findareddit\\"&gt;r/findareddit&lt;/a&gt;.&lt;/p&gt;\\n&lt;/div&gt;&lt;!-- SC_ON --&gt;",\n                    "restrict_posting": true,\n                    "user_is_banned": null,\n                    "free_form_reports": true,\n                    "wiki_enabled": true,\n                    "user_is_muted": null,\n                    "user_can_flair_in_sr": null,\n                    "display_name": "AskReddit",\n                    "header_img": "https://a.thumbs.redditmedia.com/IrfPJGuWzi_ewrDTBlnULeZsJYGz81hsSQoQJyw6LD8.png",\n                    "title": "Ask Reddit...",\n                    "original_content_tag_enabled": false,\n                    "allow_galleries": false,\n                    "icon_size": [\n                        256,\n                        256\n                    ],\n                    "primary_color": "#d4eaff",\n                    "icon_img": "https://b.thumbs.redditmedia.com/LSHrisQApf1H5F8nWShTx3_KjTOMc3R_ss3kx3XAyXQ.png",\n                    "display_name_prefixed": "r/AskReddit",\n                    "public_traffic": false,\n                    "subscribers": 57035923,\n                    "user_flair_richtext": [],\n                    "name": "t5_2qh1i",\n                    "quarantine": false,\n                    "hide_ads": false,\n                    "prediction_leaderboard_entry_type": 2,\n                    "emojis_enabled": true,\n                    "advertiser_category": "Lifestyles",\n                    "public_description": "r/AskReddit is the place to ask and answer thought-provoking questions.",\n                    "comment_score_hide_mins": 60,\n                    "allow_predictions": false,\n                    "user_has_favorited": null,\n                    "user_flair_template_id": null,\n                    "community_icon": "https://styles.redditmedia.com/t5_2qh1i/styles/communityIcon_p6kb2m6b185b1.png?width=256&amp;s=c28b9f038c305e139b62739f2133d7b776582696",\n                    "banner_background_image": "https://styles.redditmedia.com/t5_2qh1i/styles/bannerBackgroundImage_fs33xogq946f1.png?width=4000&amp;s=460f7387ea96fb4707fad8acaa81643df40f19a9",\n                    "header_title": "Ass Credit",\n                    "community_reviewed": true,\n                    "submit_text": "**AskReddit is all about DISCUSSION. Your post needs to inspire discussion, ask an open-ended question that prompts redditors to share ideas or opinions.**\\n\\n**Questions need to be neutral and the question alone.** Any opinion or answer must go as a reply to your question, this includes examples or any kind of story about you. This is so that all responses will be to your question, and there\'s nothing else to respond to. Opinionated posts are forbidden.\\n\\n* If your question has a factual answer, try r/answers.\\n* If you are trying to find out about something or get an explanation, try r/explainlikeimfive\\n* If your question has a limited number of responses, then it\'s not suitable.\\n* If you\'re asking for any kind of advice, then it\'s not suitable.\\n* If you feel the need to add an example in order for your question to make sense then you need to re-word your question.\\n* If you\'re explaining why you\'re asking the question, you need to stop.\\n\\nYou can always ask where to post in r/findareddit.",\n                    "description_html": "&lt;!-- SC_OFF --&gt;&lt;div class=\\"md\\"&gt;&lt;h6&gt;&lt;a href=\\"http://www.reddit.com/r/askreddit/submit?selftext=true&amp;amp;title=%5BSerious%5D\\"&gt; [ SERIOUS ] &lt;/a&gt;&lt;/h6&gt;\\n\\n&lt;h5&gt;&lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index#wiki_rules\\"&gt;Rules&lt;/a&gt;:&lt;/h5&gt;\\n\\n&lt;ol&gt;\\n&lt;li&gt;&lt;p&gt;You must post a clear and direct question in the title. The title may contain two, short, necessary context sentences.\\nNo text is allowed in the textbox. Your thoughts/responses to the question can go in the comments section. &lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_1-\\"&gt;more &amp;gt;&amp;gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;p&gt;Any post asking for advice should be generic and not specific to your situation alone. &lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_2-\\"&gt;more &amp;gt;&amp;gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;p&gt;AskReddit is for open-ended discussion questions. &lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_3-\\"&gt;more &amp;gt;&amp;gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;p&gt;Posting, or seeking, any identifying personal information, real or fake, will result in a ban without a prior warning. &lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_4-\\"&gt;more &amp;gt;&amp;gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;p&gt;AskReddit is not your soapbox, personal army, or advertising platform. &lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_5-\\"&gt;more &amp;gt;&amp;gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;p&gt;[Serious] tagged posts are off-limits to jokes or irrelevant replies. &lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_6-\\"&gt;more &amp;gt;&amp;gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;p&gt;Soliciting money, goods, services, or favours is not allowed. &lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_7-\\"&gt;more &amp;gt;&amp;gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;p&gt;Mods reserve the right to remove content or restrict users&amp;#39; posting privileges as necessary if it is deemed detrimental to the subreddit or to the experience of others. &lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_8-\\"&gt;more &amp;gt;&amp;gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;p&gt;Comment replies consisting solely of images will be removed. &lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_9-\\"&gt;more &amp;gt;&amp;gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;p&gt;Do not post harmful misinformation. &lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index/#wiki_-rule_10-\\"&gt;more &amp;gt;&amp;gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;\\n&lt;li&gt;&lt;p&gt;Spam, machine-generated content, and karma farming are not permitted. &lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index/#wiki_-rule_11-\\"&gt;more &amp;gt;&amp;gt;&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;\\n&lt;/ol&gt;\\n\\n&lt;h5&gt;If you think your post has disappeared, see spam or an inappropriate post, please do not hesitate to &lt;a href=\\"https://www.reddit.com/message/compose?to=%2Fr%2FAskReddit\\"&gt;contact the mods&lt;/a&gt;, we&amp;#39;re happy to help.&lt;/h5&gt;\\n\\n&lt;hr/&gt;\\n\\n&lt;h4&gt;Tags to use:&lt;/h4&gt;\\n\\n&lt;blockquote&gt;\\n&lt;h2&gt;&lt;a href=\\"https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_6-\\"&gt;[Serious]&lt;/a&gt;&lt;/h2&gt;\\n&lt;/blockquote&gt;\\n\\n&lt;h3&gt;Use a &lt;strong&gt;[Serious]&lt;/strong&gt; post tag to designate your post as a serious, on-topic-only thread.&lt;/h3&gt;\\n\\n&lt;h2&gt;&lt;/h2&gt;\\n\\n&lt;h4&gt;Filter posts by subject:&lt;/h4&gt;\\n\\n&lt;p&gt;&lt;a href=\\"http://ud.reddit.com/r/AskReddit/#ud\\"&gt;Mod posts&lt;/a&gt;\\n&lt;a href=\\"https://www.reddit.com/r/AskReddit/search/?q=flair%3Aserious&amp;amp;sort=new&amp;amp;restrict_sr=on&amp;amp;t=all\\"&gt;Serious posts&lt;/a&gt;\\n&lt;a href=\\"http://bu.reddit.com/r/AskReddit/#bu\\"&gt;Megathread&lt;/a&gt;\\n&lt;a href=\\"http://nr.reddit.com/r/AskReddit/#nr\\"&gt;Breaking news&lt;/a&gt;\\n&lt;a href=\\"/r/AskReddit\\"&gt;Unfilter&lt;/a&gt;&lt;/p&gt;\\n\\n&lt;h2&gt;&lt;/h2&gt;\\n\\n&lt;h3&gt;Please use spoiler tags to hide spoilers. &lt;code&gt;&amp;gt;!insert spoiler here!&amp;lt;&lt;/code&gt;&lt;/h3&gt;\\n\\n&lt;h2&gt;&lt;/h2&gt;\\n\\n&lt;h4&gt;Other subreddits you might like:&lt;/h4&gt;\\n\\n&lt;table&gt;&lt;thead&gt;\\n&lt;tr&gt;\\n&lt;th align=\\"left\\"&gt;Related&lt;/th&gt;\\n&lt;th align=\\"left\\"&gt;Subreddits&lt;/th&gt;\\n&lt;/tr&gt;\\n&lt;/thead&gt;&lt;tbody&gt;\\n&lt;tr&gt;\\n&lt;td align=\\"left\\"&gt;&lt;a href=\\"https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_advice_and_relationships\\"&gt;Advice and Assistance&lt;/a&gt;&lt;/td&gt;\\n&lt;td align=\\"left\\"&gt;&lt;a href=\\"https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_ask_a_______\\"&gt;Ask Others&lt;/a&gt;&lt;/td&gt;\\n&lt;/tr&gt;\\n&lt;tr&gt;\\n&lt;td align=\\"left\\"&gt;&lt;a href=\\"https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_askreddit_offshoots\\"&gt;AskReddit Offshoots&lt;/a&gt;&lt;/td&gt;\\n&lt;td align=\\"left\\"&gt;&lt;a href=\\"https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_general_discussion\\"&gt;General Discussion&lt;/a&gt;&lt;/td&gt;\\n&lt;/tr&gt;\\n&lt;tr&gt;\\n&lt;td align=\\"left\\"&gt;&lt;a href=\\"https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_requests_.26amp.3B_assistance\\"&gt;Requests &amp;amp; Assistance&lt;/a&gt;&lt;/td&gt;\\n&lt;td align=\\"left\\"&gt;&lt;a href=\\"https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_what_is_this______\\"&gt;Help Me Identify This&lt;/a&gt;&lt;/td&gt;\\n&lt;/tr&gt;\\n&lt;tr&gt;\\n&lt;td align=\\"left\\"&gt;&lt;a href=\\"https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_reddit.2Fmeta\\"&gt;Reddit/Meta&lt;/a&gt;&lt;/td&gt;\\n&lt;td align=\\"left\\"&gt;&lt;a href=\\"https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_find_subreddits\\"&gt;Find Subreddits&lt;/a&gt;&lt;/td&gt;\\n&lt;/tr&gt;\\n&lt;/tbody&gt;&lt;/table&gt;\\n\\n&lt;h2&gt;&lt;/h2&gt;\\n\\n&lt;h3&gt;Ever read the reddiquette? &lt;a href=\\"/wiki/reddiquette\\"&gt;Take a peek!&lt;/a&gt;&lt;/h3&gt;\\n\\n&lt;p&gt;&lt;a href=\\"#/RES_SR_Config/NightModeCompatible\\"&gt;&lt;/a&gt;&lt;/p&gt;\\n&lt;/div&gt;&lt;!-- SC_ON --&gt;",\n                    "spoilers_enabled": true,\n                    "comment_contribution_settings": {\n                        "allowed_media_types": null\n                    },\n                    "allow_talks": false,\n                    "header_size": [\n                        125,\n                        73\n                    ],\n                    "user_flair_position": "right",\n                    "all_original_content": false,\n                    "has_menu_widget": false,\n                    "is_enrolled_in_new_modmail": null,\n                    "key_color": "#222222",\n                    "can_assign_user_flair": false,\n                    "created": 1201233135.0,\n                    "wls": 6,\n                    "show_media_preview": true,\n                    "submission_type": "self",\n                    "user_is_subscriber": null,\n                    "allowed_media_in_comments": [],\n                    "allow_videogifs": false,\n                    "should_archive_posts": true,\n                    "user_flair_type": "text",\n                    "allow_polls": false,\n                    "collapse_deleted_comments": true,\n                    "emojis_custom_size": null,\n                    "public_description_html": "&lt;!-- SC_OFF --&gt;&lt;div class=\\"md\\"&gt;&lt;p&gt;&lt;a href=\\"/r/AskReddit\\"&gt;r/AskReddit&lt;/a&gt; is the place to ask and answer thought-provoking questions.&lt;/p&gt;\\n&lt;/div&gt;&lt;!-- SC_ON --&gt;",\n                    "allow_videos": false,\n                    "is_crosspostable_subreddit": false,\n                    "suggested_comment_sort": null,\n                    "should_show_media_in_comments_setting": true,\n                    "can_assign_link_flair": false,\n                    "allow_prediction_contributors": false,\n                    "submit_text_label": "Ask a question",\n                    "link_flair_position": "right",\n                    "user_sr_flair_enabled": null,\n                    "user_flair_enabled_in_sr": false,\n                    "allow_discovery": true,\n                    "accept_followers": true,\n                    "user_sr_theme_enabled": true,\n                    "link_flair_enabled": true,\n                    "disable_contributor_requests": false,\n                    "subreddit_type": "public",\n                    "notification_level": null,\n                    "banner_img": "https://b.thumbs.redditmedia.com/RdyIGEa9Ghu94wr5v3oQQ_zvE1C1cntehzZJChVFkcw.png",\n                    "user_flair_text": null,\n                    "banner_background_color": "#d4eaff",\n                    "show_media": false,\n                    "id": "2qh1i",\n                    "user_is_contributor": null,\n                    "over18": false,\n                    "description": "###### [ [ SERIOUS ] ](http://www.reddit.com/r/askreddit/submit?selftext=true&amp;title=%5BSerious%5D)\\r\\n\\r\\n\\r\\n##### [Rules](https://www.reddit.com/r/AskReddit/wiki/index#wiki_rules):\\r\\n1. You must post a clear and direct question in the title. The title may contain two, short, necessary context sentences.\\r\\nNo text is allowed in the textbox. Your thoughts/responses to the question can go in the comments section. [more &gt;&gt;](https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_1-)\\r\\n\\r\\n2. Any post asking for advice should be generic and not specific to your situation alone. [more &gt;&gt;](https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_2-)\\r\\n\\r\\n3. AskReddit is for open-ended discussion questions. [more &gt;&gt;](https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_3-)\\r\\n\\r\\n4. Posting, or seeking, any identifying personal information, real or fake, will result in a ban without a prior warning. [more &gt;&gt;](https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_4-)\\r\\n\\r\\n5. AskReddit is not your soapbox, personal army, or advertising platform. [more &gt;&gt;](https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_5-)\\r\\n\\r\\n6. [Serious] tagged posts are off-limits to jokes or irrelevant replies. [more &gt;&gt;](https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_6-)\\r\\n\\r\\n7. Soliciting money, goods, services, or favours is not allowed. [more &gt;&gt;](https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_7-)\\r\\n\\r\\n8. Mods reserve the right to remove content or restrict users\' posting privileges as necessary if it is deemed detrimental to the subreddit or to the experience of others. [more &gt;&gt;](https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_8-)\\r\\n\\r\\n9. Comment replies consisting solely of images will be removed. [more &gt;&gt;](https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_9-)\\r\\n\\r\\n10. Do not post harmful misinformation. [more &gt;&gt;](https://www.reddit.com/r/AskReddit/wiki/index/#wiki_-rule_10-)\\r\\n\\r\\n11. Spam, machine-generated content, and karma farming are not permitted. [more &gt;&gt;](https://www.reddit.com/r/AskReddit/wiki/index/#wiki_-rule_11-)\\r\\n\\r\\n##### If you think your post has disappeared, see spam or an inappropriate post, please do not hesitate to [contact the mods](https://www.reddit.com/message/compose?to=%2Fr%2FAskReddit), we\'re happy to help.\\r\\n\\r\\n---\\r\\n\\r\\n#### Tags to use:\\r\\n\\r\\n&gt; ## [[Serious]](https://www.reddit.com/r/AskReddit/wiki/index#wiki_-rule_6-)\\r\\n\\r\\n### Use a **[Serious]** post tag to designate your post as a serious, on-topic-only thread.\\r\\n\\r\\n-\\r\\n\\r\\n#### Filter posts by subject:\\r\\n\\r\\n[Mod posts](http://ud.reddit.com/r/AskReddit/#ud)\\r\\n[Serious posts](https://www.reddit.com/r/AskReddit/search/?q=flair%3Aserious&amp;sort=new&amp;restrict_sr=on&amp;t=all)\\r\\n[Megathread](http://bu.reddit.com/r/AskReddit/#bu)\\r\\n[Breaking news](http://nr.reddit.com/r/AskReddit/#nr)\\r\\n[Unfilter](/r/AskReddit)\\r\\n\\r\\n\\r\\n-\\r\\n\\r\\n### Please use spoiler tags to hide spoilers. `&gt;!insert spoiler here!&lt;`\\r\\n\\r\\n-\\r\\n\\r\\n#### Other subreddits you might like:\\r\\nRelated|Subreddits\\r\\n:---|:---\\r\\n[Advice and Assistance](https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_advice_and_relationships)|[Ask Others](https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_ask_a_______)\\r\\n[AskReddit Offshoots](https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_askreddit_offshoots)|[General Discussion](https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_general_discussion)\\r\\n[Requests &amp; Assistance](https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_requests_.26amp.3B_assistance)|[Help Me Identify This](https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_what_is_this______)\\r\\n[Reddit/Meta](https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_reddit.2Fmeta)|[Find Subreddits](https://reddit.com/r/AskReddit/wiki/sidebarsubs/#wiki_find_subreddits)\\r\\n\\r\\n\\r\\n\\r\\n\\r\\n-\\r\\n\\r\\n### Ever read the reddiquette? [Take a peek!](/wiki/reddiquette)\\r\\n\\r\\n[](#/RES_SR_Config/NightModeCompatible)",\n                    "submit_link_label": "",\n                    "user_flair_text_color": null,\n                    "restrict_commenting": false,\n                    "user_flair_css_class": null,\n                    "allow_images": false,\n                    "lang": "es",\n                    "url": "/r/AskReddit/",\n                    "created_utc": 1201233135.0,\n                    "banner_size": [\n                        1280,\n                        384\n                    ],\n                    "mobile_banner_image": "",\n                    "user_is_moderator": null,\n                    "allow_predictions_tournament": false\n                }\n            }\n        ],\n        "before": null\n    }\n}'
+    # response = json.loads(response)
+
+    print(params)
+    response = reddit_client.make_request(SUBREDDIT_URL, params=params)
+    communities = []
+
+    if response:
+        try:
+            next_page = response["data"].get("after", None)
+            children = response["data"].get("children", [])
+
+            logger.debug(f"Next Page: {next_page}")
+
+            for child in children:
+                data = child["data"]
+
+                # Log relevant community fields
+                for field in COMMUNITY_FIELDS:
+                    logger.debug(f"{field}: {data.get(field, '')}")
+
+                community_data_dict = {field: data.get(field, '') for field in COMMUNITY_FIELDS}
+
+                community_data_dict['icon_img'] = data.get('icon_img', '') or data.get('community_icon', '')
+
+                # Create community object using the dictionary
+                community = Communities(**community_data_dict)
+
+                communities.append(community)
+            # # Create community object with a cleaner way
+            # community = Communities(
+            #     unique_name=data.get("name", ""),
+            #     title=data.get("title", ""),
+            #     subscribers=data.get("subscribers", 0),
+            #     description=data.get("description", ""),
+            #     lang=data.get("lang", ""),
+            #     url=data.get("url", ""),
+            #     created_utc=data.get("created_utc", 0),
+            #     icon_img=icon_img,
+            #     over18=data.get("over18", False),
+            # )
+
+            return communities, next_page
+
+        except (KeyError, TypeError, ValueError) as e:
+            logger.error(f"Error parsing subreddit data: {e}")
+
+    return [], None
+
+
+def store_communities_in_db(communities: list):
+    """
+    Converts Communities list to tuples and inserts into the database.
+    Uses bulk insert query via PLSQL helper.
+    """
+    plsql = PLSQL()
+    unique_subreddit_in_db = plsql.get_data_from(SELECT_UNIQUE_NAME_COMMUNITY)
+    unique_subreddit_names = {row[0] for row in unique_subreddit_in_db}
+    communities_data = [
+        community.to_tuple()
+        for community in communities
+        if community.get_unique_identifer() not in unique_subreddit_names
+    ]
+    if len(communities_data) == 0:
+        logger.info("No New Communities Found")
+    else:
+        plsql.insert_bulk_data_into_db(BULK_INSERT_COMMUNITIES, communities_data)
+        plsql.close_connection()
 
 
 def get_communities():
-    logger.info("Getting reddit subreddit communities")
-    response = redditClient.make_request(SUBREDDIT_URL)
-    if response:
-        next_page = response["data"].get("after", [])
-        childrens = response["data"].get("children", [])
-        logger.debug(f"children :{childrens}")
-        logger.debug(f"Next Page :{next_page}")
-        for children in childrens:
-            data = children.get("data")
-            data.get
-            Communities(children)
+    """
+    Fetches data 4 times, waiting 15 seconds between requests,
+    paginating through the results and storing each batch in DB.
+    """
+    logger.info("Starting Reddit communities fetch cycle")
+    after = None
+    finished = False
 
-get_communities()
+    while not finished:
+        logger.info("Starting new 1-minute cycle with 4 requests")
+        for i in range(4):
+            logger.info(f"Fetching batch {i + 1}/4")
+            communities, after = fetch_subreddit_communities(after)
+            if communities:
+                store_communities_in_db(communities)
+                logger.info(f"Stored batch {i + 1} with {len(communities)} communities")
+            else:
+                logger.warning(f"No data fetched on batch {i + 1}")
+
+            if not after:
+                logger.info("No more pages available, finished fetching all data")
+                finished = True
+                break
+
+            if i < 3:  # Sleep only between requests, not after last one
+                logger.info("Sleeping for 15 seconds before next request")
+                time.sleep(15)
+
+        if not finished:
+            logger.info("Completed 4 requests this minute, waiting until next minute")
+            # Sleep to complete the 60 second minute cycle,
+            # subtracting time spent on 4 requests + sleeps
+            # Each request + sleep ~15 seconds * 3 intervals = 45 seconds approx.
+            # You can adjust this if needed.
+            time.sleep(15)
+            finished = True
+
+    logger.info("Finished fetching all Reddit communities")
+
+
+if __name__ == "__main__":
+    init_faktory_client(
+        role=FAKTORY_CONSUMER_ROLE,
+        queue="enqueue-crawl-community",
+        jobtype="enqueue_crawl_community",
+        fn=get_communities,
+    )
+    # logger.info("Started")
+    # communities, after = fetch_subreddit_communities()
+    # logger.info("collected data")
+    # logger.info(f"collected data: {communities}")
+    # logger.info(f"after: {after}")
+    # store_communities_in_db(communities)
+    # logger.info("Ended")
