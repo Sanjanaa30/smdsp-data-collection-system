@@ -1,5 +1,7 @@
 FOURCHAN_BASE_URL = "https://a.4cdn.org"
 
-THREADS_JSON = "threads.json"
+THREADS = "threads"
+THREAD = "thread"
+DOT_JSON = ".json"
 
 CATALOG_JSON = "catalog.json"
