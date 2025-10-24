@@ -1,6 +1,6 @@
 import logging
 import os
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 from dotenv import load_dotenv
 
 class Logger:
@@ -41,12 +41,8 @@ class Logger:
         if not logger.handlers:  # Prevent duplicate handlers
             if log_mode == "FILE":
                 if self.file_name != '':
-                     print("truee")
                      log_dir = os.getenv("LOG_DIR", "default.log")
-                     print(log_dir)
-                     print(self.file_name)
                      log_file = f"{log_dir}/{self.file_name}"
-                     print(log_file)
                      log_dir = os.path.dirname(log_file)
                 else:
                     log_file = os.getenv("LOG_FILE", "default.log")
@@ -55,7 +51,15 @@ class Logger:
                 if log_dir:
                     os.makedirs(log_dir, exist_ok=True)
 
-                fh = RotatingFileHandler(log_file, maxBytes=10_000_000, backupCount=5, encoding="utf-8")
+                # Use TimedRotatingFileHandler to avoid Windows file locking issues
+                fh = TimedRotatingFileHandler(
+                    log_file, 
+                    when='midnight', 
+                    interval=1, 
+                    backupCount=7, 
+                    encoding="utf-8",
+                    delay=True  # Delays opening the file until first write
+                )
                 fh.setFormatter(formatter)
                 logger.addHandler(fh)
             else:

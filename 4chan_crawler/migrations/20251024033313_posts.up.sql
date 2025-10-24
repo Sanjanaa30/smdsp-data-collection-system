@@ -6,7 +6,6 @@
 -- =============================================
 
 CREATE TABLE IF NOT EXISTS posts (
-    id BIGSERIAL PRIMARY KEY,              -- Unique ID for each database record
     board_name TEXT,                       -- Name of the board (e.g., pol, b, etc.)
     post_no BIGINT NOT NULL,               -- Original 4chan post number (unique per thread)
     name TEXT,                             -- Name of the poster
@@ -27,7 +26,10 @@ CREATE TABLE IF NOT EXISTS posts (
 );
 
 
-CREATE UNIQUE INDEX ON posts (board_name, post_no, created_at);
+SELECT create_hypertable(
+    'posts',
+    'created_at',
+    chunk_time_interval => INTERVAL '1 hours'
+);
 
-
-SELECT create_hypertable('posts', 'created_at', chunk_time_interval => INTERVAL '1 hours');
+CREATE UNIQUE INDEX IF NOT EXISTS posts_unique_idx ON posts (board_name, post_no, created_at);

@@ -7,4 +7,4 @@ INSERT_BULK_BOARD_DATA_QUERY = "INSERT INTO boards (board_code, board_title, met
 SELECT_BOARD_CODE_QUERY = "SELECT board_code FROM boards"
 
 # Query to insert posts into posts table
-INSERT_BULK_POSTS_DATA_QUERY = "INSERT INTO posts (board_name, post_no, name, subject, comment, filename, ext, post_time, resto, country, country_name, replies, images, archived, bumplimit, archived_on) VALUES %s ON CONFLICT (post_no) DO NOTHING;"
+INSERT_BULK_POSTS_DATA_QUERY = "INSERT INTO posts (board_name, post_no, name, subject, comment, filename, ext, post_time, resto, country, country_name, replies, images, archived, bumplimit, archived_on) VALUES %s ON CONFLICT (board_name, post_no, created_at) DO NOTHING;"

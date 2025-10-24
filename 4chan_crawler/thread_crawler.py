@@ -69,7 +69,7 @@ class ThreadCrawler:
         initialize_producer(
             queue=f"enqueue-crawl-thread-{board}",
             jobtype=f"enqueue_crawl_thread_{board}",
-            delayedTimer=datetime.timedelta(seconds=60),
+            delayedTimer=datetime.timedelta(seconds=15),
             args=[board, new_threads],
         )
 
