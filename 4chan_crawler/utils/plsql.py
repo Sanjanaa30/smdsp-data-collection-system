@@ -31,13 +31,13 @@ class PLSQL:
             logger.error(f"Error inserting data into PostgreSQL database: {e}")
             self.conn.rollback()
     
-    def get_data_from(self, query):
+    def get_data_from(self, query, params=None):
         try:
             logger.info("Fetching data from PostgreSQL database...")
             logger.debug(f"Select query: {query}")
-            self.cur.execute(query)
+            self.cur.execute(query, params)
             records = self.cur.fetchall()
-            logger.info("Successfull fetched data from PostgreSQL database...")
+            logger.info("Successfully fetched data from PostgreSQL database...")
             return records
         except Exception as e:
             logger.error(f"Error fetching data from PostgreSQL database: {e}")

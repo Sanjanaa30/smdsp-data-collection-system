@@ -1,2 +1,0 @@
-FAKTORY_BASE_URL = "localhost:7420"
-FAKTORY_PASSWORD = "password"

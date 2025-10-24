@@ -1,4 +1,5 @@
 .env
 .venv
 __pycache__/
+4chan_crawler/logs/*
 reddit_crawler/logs/*
