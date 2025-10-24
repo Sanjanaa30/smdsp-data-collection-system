@@ -2,6 +2,14 @@ if we are collecting specific boards data , should we hard code specific board n
 **Exposing Port for timescale-db**
 - sudo docker run -d --name timescaledb -p 5432:5432 -e POSTGRES_PASSWORD=password -v timescaledb-data:/var/lib/postgresql/data timescale/timescaledb-ha:pg17
 
+docker run -d -it --name faktory \
+  -v faktory-data:/var/lib/faktory/db \
+  -e "FAKTORY_PASSWORD=password" \
+  -p 7419:7419 \
+  -p 80:7420 \
+  contribsys/faktory \
+  /faktory -b :7419 -w :7420
+
 **Installing Rust**
 - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 - source $HOME/.cargo/env
@@ -58,3 +66,24 @@ sudo usermod -aG sudo <user_name>
 
 **Activating .venv**
 - source .venv/bin/activate
+
+**Running Crawler**
+- 4Chan_Crawler
+    - cd 4chan_crawler
+    1. Collecting list of all the boards avaiable
+        - python3 ./cold_start_crawler.py --update-new-boards
+        - python3 ./crawler.py --update-new-boards   
+
+    2. Collecting Pol, g,.... Boarddata
+        - python3 ./cold_start_crawler.py --collect-posts "pol" "int" "g" "out" "sp" 
+        - python3 ./crawler.py --collect-posts "pol" "int" "g" "out" "sp"
+
+- Reddit_crawler
+    - cd reddit_crawler
+        1. Collecting list of all the boards avaiable
+            - python3 ./cold_start_crawler.py --update-new-subreddit
+            - python3 ./crawler.py --update-new-subreddit   
+
+        2. Collecting Pol, g,.... Boarddata
+            - python3 ./cold_start_crawler.py --collect-posts "geopolitics" "technology" "AutoGPT" "sports" "ArtificialInteligence" 
+            - python3 ./crawler.py --collect-posts "geopolitics" "technology" "AutoGPT" "sports" "ArtificialInteligence"

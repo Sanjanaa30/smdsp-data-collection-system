@@ -48,7 +48,7 @@ class CrawlerConsumer:
         logger.info(
             f"🚀 Starting Faktory consumer for collecting posts: {self.collect_posts}"
         )
-        logger.info(self.collect_posts)
+        # logger.info(self.collect_posts)
         queue = [
             f"enqueue-crawl-{subreddit_name.lower()}"
             for subreddit_name in self.collect_posts
@@ -58,7 +58,7 @@ class CrawlerConsumer:
             for subreddit_name in self.collect_posts
         ]
 
-        logger.info(queue, jobtype)
+        # logger.info(queue, jobtype)
         concurrency = os.getenv("FAKTORY_CONCURRENCY", 2)
         initialize_consumer(
             queue=queue, jobtypes=jobtype, fn=get_posts, concurrency=int(concurrency)

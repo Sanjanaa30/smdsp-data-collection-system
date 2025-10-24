@@ -4,8 +4,8 @@ cold_start_crawler.py
 A utility for initializing and managing a "cold start" catalog crawl process.
 
 Commands:
-    --update-new-Subreddit      Update all newly discovered or unprocessed Subreddit.
-    --collect-posts [names]       Collect posts for one or more specified Subreddit.
+    --update-new-subreddit      Update all newly discovered or unprocessed subreddit.
+    --collect-posts [names]       Collect posts for one or more specified subreddit.
     --help                        Display information about available commands.
 """
 
@@ -23,7 +23,7 @@ class ColdStartCrawler:
     A class responsible for handling cold start crawling operations.
 
     Attributes:
-        update_new_subreddit (bool): Flag indicating whether to update new Subreddit.
+        update_new_subreddit (bool): Flag indicating whether to update new subreddit.
         collect_posts (list[str] | None): List of subreddit names to collect posts for.
     """
 

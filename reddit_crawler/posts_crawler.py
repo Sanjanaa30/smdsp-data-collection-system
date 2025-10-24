@@ -84,14 +84,14 @@ def store_ps_in_db(posts: list):
     Uses bulk insert query via PLSQL helper.
     """
     plsql = PLSQL()
-    unique_posts_in_db = plsql.get_data_from(SELECT_UNIQUE_NAME_POSTS)
-    unique_posts_values = {row[0] for row in unique_posts_in_db}
+    # unique_posts_in_db = plsql.get_data_from(SELECT_UNIQUE_NAME_POSTS)
+    # unique_posts_values = {row[0] for row in unique_posts_in_db}
     posts_data = [
         post.to_tuple()
         for post in posts
-        if post.get_unique_identifer() not in unique_posts_values
+        # if post.get_unique_identifer() not in unique_posts_values
     ]
-    logger.debug(f"Inserting posts_data {posts_data}")
+    # logger.debug(f"Inserting posts_data {posts_data}")
     if len(posts_data) == 0:
         logger.info("No New Posts Found")
     else:
