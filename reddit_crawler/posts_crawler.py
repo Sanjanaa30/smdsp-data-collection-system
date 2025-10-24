@@ -9,7 +9,7 @@ from constants.constants import (
 from modal.post import Post, DetailedPost
 from utils.logger import Logger
 from utils.plsql import PLSQL
-from constants.plsql_constants import BULK_INSERT_POSTS, SELECT_UNIQUE_NAME_POSTS
+from constants.plsql_constants import BULK_INSERT_POSTS
 import os
 import datetime
 

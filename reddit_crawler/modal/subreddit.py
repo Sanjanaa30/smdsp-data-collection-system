@@ -15,7 +15,19 @@ class Subreddit:
             - Strong language
             - Other adult or explicit material
     """
-    def __init__(self, name, title, subscribers, description, lang, url, created_utc, icon_img, over18):
+
+    def __init__(
+        self,
+        name,
+        title,
+        subscribers,
+        description,
+        lang,
+        url,
+        created_utc,
+        icon_img,
+        over18,
+    ):
         self.unique_name = name
         self.title = title
         self.subscribers = subscribers
@@ -43,7 +55,7 @@ class Subreddit:
             f"NSFW            : {'Yes' if self.over18 else 'No'}\n"
             f"Description     : {self.description}"
         )
-    
+
     def to_tuple(self) -> tuple:
         """
         Returns the subreddit data as a tuple for database insertion.
@@ -57,8 +69,8 @@ class Subreddit:
             self.url,
             self.created_utc,
             self.icon_img,
-            self.over18
+            self.over18,
         )
-    
+
     def get_unique_identifer(self):
         return self.unique_name

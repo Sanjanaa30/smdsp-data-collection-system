@@ -108,7 +108,9 @@ class ThreadCrawler:
 
         for thread_id in thread_ids:
             logger.debug(f"Fetching posts from thread {thread_id}")
-            response = self.client.make_request(f"{board_name}/{THREAD}/{thread_id}{DOT_JSON}")
+            response = self.client.make_request(
+                f"{board_name}/{THREAD}/{thread_id}{DOT_JSON}"
+            )
 
             if not response:
                 logger.warning(f"No response received for thread {thread_id}")
@@ -131,7 +133,6 @@ class ThreadCrawler:
 
         return all_posts
 
-
     def save_posts_to_database(self, posts: list):
         """
         Saves a list of Posts objects to the database using a bulk insert.
@@ -141,19 +142,25 @@ class ThreadCrawler:
             return
 
         from utils.plsql import PLSQL
+
         db_client = PLSQL()
 
         post_records = [post.to_tuple() for post in posts]
-        logger.debug(f"Preparing to insert {len(post_records)} posts into the database.")
+        logger.debug(
+            f"Preparing to insert {len(post_records)} posts into the database."
+        )
 
         try:
-            db_client.insert_bulk_data_into_db(INSERT_BULK_POSTS_DATA_QUERY, post_records)
-            logger.info(f"Successfully inserted {len(post_records)} posts into the database.")
+            db_client.insert_bulk_data_into_db(
+                INSERT_BULK_POSTS_DATA_QUERY, post_records
+            )
+            logger.info(
+                f"Successfully inserted {len(post_records)} posts into the database."
+            )
         except Exception as e:
             logger.error(f"Error inserting posts into the database: {e}")
         finally:
             db_client.close_connection()
-
 
     def collect_and_store_posts(self, board_name, thread_ids: list):
         """
@@ -163,7 +170,9 @@ class ThreadCrawler:
             logger.warning("No thread IDs provided. Skipping post collection.")
             return
 
-        logger.info(f"Collecting posts for board '{board_name}' from {len(thread_ids)} threads.")
+        logger.info(
+            f"Collecting posts for board '{board_name}' from {len(thread_ids)} threads."
+        )
 
         posts = self.fetch_thread_posts(board_name, thread_ids)
         if posts:
@@ -171,8 +180,6 @@ class ThreadCrawler:
             self.save_posts_to_database(posts)
         else:
             logger.warning(f"No posts retrieved for board '{board_name}'.")
-
-        
 
     def print_threads_from_board(self, board: str) -> None:
         """

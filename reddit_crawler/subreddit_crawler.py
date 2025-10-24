@@ -6,7 +6,10 @@ from modal.subreddit import Subreddit
 from utils.logger import Logger
 from utils.plsql import PLSQL
 from utils.faktory import initialize_producer
-from constants.plsql_constants import BULK_INSERT_SUBREDDIT, SELECT_UNIQUE_NAME_SUBREDDIT
+from constants.plsql_constants import (
+    BULK_INSERT_SUBREDDIT,
+    SELECT_UNIQUE_NAME_SUBREDDIT,
+)
 import datetime
 
 logger = Logger(REDDIT_CRAWLER).get_logger()
@@ -45,9 +48,13 @@ def fetch_all_subreddits(after=None) -> tuple[list[Subreddit], str | None]:
                 # for field in SUBREDDIT_FIELDS:
                 #     logger.debug(f"{field}: {data.get(field, '')}")
 
-                subreddit_data_dict = {field: data.get(field, '') for field in SUBREDDIT_FIELDS}
+                subreddit_data_dict = {
+                    field: data.get(field, "") for field in SUBREDDIT_FIELDS
+                }
 
-                subreddit_data_dict['icon_img'] = data.get('icon_img', '') or data.get('community_icon', '')
+                subreddit_data_dict["icon_img"] = data.get("icon_img", "") or data.get(
+                    "community_icon", ""
+                )
 
                 # Create subreddit object using the dictionary
                 subreddit = Subreddit(**subreddit_data_dict)
@@ -98,7 +105,9 @@ def get_list_of_subreddit():
             subreddit_list, after = fetch_all_subreddits(after)
             if subreddit_list:
                 store_subreddit_in_db(subreddit_list)
-                logger.info(f"Stored batch {i + 1} with {len(subreddit_list)} subreddits")
+                logger.info(
+                    f"Stored batch {i + 1} with {len(subreddit_list)} subreddits"
+                )
             else:
                 logger.warning(f"No data fetched on batch {i + 1}")
 
@@ -128,5 +137,6 @@ def get_list_of_subreddit():
         delayedTimer=datetime.timedelta(days=30),
     )
     logger.info("Completed Scheduling Job for collecting list of subreddits")
+
 
 # get_list_of_subreddit()

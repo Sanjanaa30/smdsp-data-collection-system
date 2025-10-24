@@ -7,9 +7,11 @@ from utils.logger import Logger
 from constants.constants import CHAN_CRAWLER
 from psycopg2.extras import execute_values
 
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")        
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 logger = Logger(CHAN_CRAWLER).get_logger()
+
+
 class PLSQL:
     def __init__(self):
         logger.info("Connecting to PostgreSQL database...")
@@ -30,7 +32,7 @@ class PLSQL:
         except Exception as e:
             logger.error(f"Error inserting data into PostgreSQL database: {e}")
             self.conn.rollback()
-    
+
     def get_data_from(self, query, params=None):
         try:
             logger.info("Fetching data from PostgreSQL database...")
@@ -42,7 +44,7 @@ class PLSQL:
         except Exception as e:
             logger.error(f"Error fetching data from PostgreSQL database: {e}")
             return []
-        
+
     def insert_bulk_data_into_db(self, query: str, fields: list):
         try:
             if not fields:

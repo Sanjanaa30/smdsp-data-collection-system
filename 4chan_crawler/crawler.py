@@ -16,7 +16,7 @@ from constants.constants import (
     CHAN_CRAWLER,
     FAKTORY_SERVER_URL,
     FAKTORY_CONCURRENCY,
-    FAKTORY_CONSUMER_ROLE
+    FAKTORY_CONSUMER_ROLE,
 )
 from utils.faktory import initialize_consumer
 from utils.logger import Logger

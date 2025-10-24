@@ -35,7 +35,7 @@ class ChanClient:
         except requests.exceptions.RequestException as e:
             logger.error(f"Request failed for {url}: {e}")
             return None
-        
+
         except ValueError as e:
             logger.error(f"Failed to parse JSON from {url}: {e}")
             return None

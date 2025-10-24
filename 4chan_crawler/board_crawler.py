@@ -10,8 +10,6 @@ from constants.plsql_constants import (
 )
 from constants.constants import (
     CHAN_CRAWLER,
-    FAKTORY_CONSUMER_ROLE,
-    FAKTORY_PRODUCER_ROLE,
 )
 from dotenv import load_dotenv
 from utils.faktory import initialize_producer

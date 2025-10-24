@@ -9,6 +9,7 @@ from constants.api_constants import REDDIT_BASE_URL
 from constants.constants import REDDIT_CRAWLER
 from utils.logger import Logger
 from urllib.parse import urljoin
+
 logger = Logger(REDDIT_CRAWLER).get_logger()
 
 
@@ -30,7 +31,7 @@ class RedditClient:
         return {"User-Agent": user_agent}
 
     def _respect_rate_limit(self, response: Optional[Response], attempt: int) -> None:
-        wait_time = self.backoff_factor ** attempt
+        wait_time = self.backoff_factor**attempt
         if response is not None:
             retry_after = response.headers.get("Retry-After")
             if retry_after:
@@ -47,6 +48,7 @@ class RedditClient:
         params = params or {}
 
         from requests.models import PreparedRequest
+
         req = PreparedRequest()
         req.prepare_url(url, params)
         logger.debug(f"Final prepared request URL: {req.url}")
@@ -76,7 +78,13 @@ class RedditClient:
                 return json_data
 
             except requests.exceptions.RequestException as exc:
-                logger.error("Request failed for %s on attempt %d/%d: %s", url, attempt, self.max_retries, exc)
+                logger.error(
+                    "Request failed for %s on attempt %d/%d: %s",
+                    url,
+                    attempt,
+                    self.max_retries,
+                    exc,
+                )
                 if attempt == self.max_retries:
                     break
                 self._respect_rate_limit(None, attempt)
