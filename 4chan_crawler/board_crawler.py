@@ -105,7 +105,7 @@ def fetch_and_save_boards():
     if len(values) == 0:
         logger.info("No New Boards found")
     else:
-        logger.info(f"New Boards found {values}")
+        logger.info(f"Total New Boards found {len(values)}")
         plsql.insert_bulk_data_into_db(INSERT_BULK_BOARD_DATA_QUERY, values)
         plsql.close_connection()
 
