@@ -1,4 +1,4 @@
-docker run -d -it --name faktory -v faktory-data:/var/lib/faktory/db -e "FAKTORY_PASSWORD=password" -p 127.0.0.1:7419:7419 -p 127.0.0.1:7420:7420 contribsys/faktory /faktory -b :7419 -w :7420
+docker run -d -it --name faktory -v faktory-data:/var/lib/faktory/db -e "FAKTORY_PASSWORD=password" -p 7419:7419 -p 7420:7420 contribsys/faktory /faktory -b :7419 -w :7420
 
 sqlx migrate add -r --source .\4chan_crawler\migrations\ "trail"
 
@@ -109,10 +109,10 @@ subreddit": "technology",
 Main command to start the subreddit crawler
 
 # Update all new Subreddit
-python cold_start_crawler.py --update-new-Subreddit
+python3 cold_start_crawler.py --update-new-subreddit
 
 # Collect posts for one subreddit
-python cold_start_crawler.py --collect-posts "Technology"
+python3 cold_start_crawler.py --collect-posts "Technology"
 
 # Collect posts for multiple Subreddit
 python cold_start_crawler.py --collect-posts "Technology" "geopolitics" "Outdoors"
@@ -122,10 +122,10 @@ python cold_start_crawler.py --help
 
 
 # Start Faktory consumer for updating new Subreddit
-python crawler.py --update-new-Subreddit
+python3 crawler.py --update-new-subreddit
 
 # Start Faktory consumer for collecting posts from a single subreddit
-python crawler.py --collect-posts "Technology"
+python3 crawler.py --collect-posts "Technology"
 
 # Start Faktory consumer for multiple Subreddit
 python crawler.py --collect-posts "Tech" "Science" "Gaming"

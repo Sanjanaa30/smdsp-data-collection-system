@@ -1,4 +1,25 @@
 if we are collecting specific boards data , should we hard code specific board name if not what should be do?
+**Exposing Port for timescale-db**
+- sudo docker run -d --name timescaledb -p 5432:5432 -e POSTGRES_PASSWORD=password -v timescaledb-data:/var/lib/postgresql/data timescale/timescaledb-ha:pg17
+
+**Installing Rust**
+- curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+- source $HOME/.cargo/env
+- rustc --version
+- cargo --version
+
+
+**Installing sqlx**
+- cargo install sqlx-cli --no-default-features --features postgres
+- sqlx --version
+
+**Adding .env**
+- SET DATABASE_URL={} 
+
+**Creating Database**
+- sqlx database create
+- sqlx migrate run
+
 
 Social Media
 
@@ -30,3 +51,10 @@ Social Media
 
 **make user sudoers**
 sudo usermod -aG sudo <user_name>
+
+**Download Log File**
+- sudo cp logs/reddit_crawler.log "../../../"
+- scp <user_name>@<ip_address>:/home/reddit_crawler.log C:\Users\karth\Downloads\
+
+**Activating .venv**
+- source .venv/bin/activate
