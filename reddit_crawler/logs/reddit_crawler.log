@@ -1,11 +1,107 @@
-2025-10-16 15:27:21,721 - reddit_crawler - INFO - Initialized RedditClient with base URL: https://www.reddit.com
-2025-10-16 15:27:21,721 - reddit_crawler - INFO - Making request to: https://www.reddit.com/subreddits.json
-2025-10-16 15:27:22,632 - reddit_crawler - INFO - Successfully fetched data from /subreddits.json
-2025-10-17 12:34:36,092 - reddit_crawler - INFO - Initialized RedditClient with base URL: https://www.reddit.com
-2025-10-17 12:34:36,093 - reddit_crawler - INFO - Getting reddit subreddit communities
-2025-10-17 12:34:36,093 - reddit_crawler - INFO - Making request to: https://www.reddit.com/subreddits.json
-2025-10-17 12:34:36,425 - reddit_crawler - ERROR - Request failed for https://www.reddit.com/subreddits.json: 429 Client Error: Too Many Requests for url: https://www.reddit.com/subreddits.json
-2025-10-17 12:34:55,095 - reddit_crawler - INFO - Initialized RedditClient with base URL: https://www.reddit.com
-2025-10-17 12:34:55,096 - reddit_crawler - INFO - Getting reddit subreddit communities
-2025-10-17 12:34:55,096 - reddit_crawler - INFO - Making request to: https://www.reddit.com/subreddits.json
-2025-10-17 12:34:55,293 - reddit_crawler - ERROR - Request failed for https://www.reddit.com/subreddits.json: 429 Client Error: Too Many Requests for url: https://www.reddit.com/subreddits.json
+2025-10-23 19:05:38,574 - reddit_crawler - INFO - 🚀 Starting Faktory consumer for updating Subreddit...
+2025-10-23 19:05:38,575 - reddit_crawler - INFO - Initialing Consumer
+2025-10-23 19:05:38,575 - reddit_crawler - DEBUG - queue: ['enqueue-crawl-list-of-subreddit'], jobtype: ['enqueue_crawl_list_of_subreddit']
+2025-10-23 19:05:38,575 - reddit_crawler - DEBUG - Faktory server URL: tcp://:password@localhost:7419
+2025-10-23 19:05:41,539 - reddit_crawler - INFO - Starting Subreddits fetch cycle
+2025-10-23 19:05:41,539 - reddit_crawler - INFO - Starting new 1-minute cycle with 4 requests
+2025-10-23 19:05:41,539 - reddit_crawler - INFO - Fetching batch 1/4
+2025-10-23 19:05:41,540 - reddit_crawler - DEBUG - Next Page: t5_2cneq
+2025-10-23 19:05:41,549 - reddit_crawler - INFO - Connecting to PostgreSQL database...
+2025-10-23 19:05:41,550 - reddit_crawler - DEBUG - DATABASE_URL: postgres://postgres:password@localhost:5432/reddit_crawler
+2025-10-23 19:05:41,667 - reddit_crawler - INFO - Fetching data from PostgreSQL database...
+2025-10-23 19:05:41,667 - reddit_crawler - DEBUG - Select query: SELECT unique_name FROM Subreddit
+2025-10-23 19:05:41,708 - reddit_crawler - INFO - No New Subreddit Found
+2025-10-23 19:05:41,708 - reddit_crawler - INFO - Stored batch 1 with 2 subreddits
+2025-10-23 19:05:41,708 - reddit_crawler - INFO - Sleeping for 15 seconds before next request
+2025-10-23 19:05:56,709 - reddit_crawler - INFO - Fetching batch 2/4
+2025-10-23 19:05:56,709 - reddit_crawler - DEBUG - Next Page: t5_2cneq
+2025-10-23 19:05:56,710 - reddit_crawler - INFO - Connecting to PostgreSQL database...
+2025-10-23 19:05:56,710 - reddit_crawler - DEBUG - DATABASE_URL: postgres://postgres:password@localhost:5432/reddit_crawler
+2025-10-23 19:05:56,733 - reddit_crawler - INFO - Fetching data from PostgreSQL database...
+2025-10-23 19:05:56,733 - reddit_crawler - DEBUG - Select query: SELECT unique_name FROM Subreddit
+2025-10-23 19:05:56,742 - reddit_crawler - INFO - No New Subreddit Found
+2025-10-23 19:05:56,743 - reddit_crawler - INFO - Stored batch 2 with 2 subreddits
+2025-10-23 19:05:56,744 - reddit_crawler - INFO - Sleeping for 15 seconds before next request
+2025-10-23 19:06:11,744 - reddit_crawler - INFO - Fetching batch 3/4
+2025-10-23 19:06:11,744 - reddit_crawler - DEBUG - Next Page: t5_2cneq
+2025-10-23 19:06:11,745 - reddit_crawler - INFO - Connecting to PostgreSQL database...
+2025-10-23 19:06:11,745 - reddit_crawler - DEBUG - DATABASE_URL: postgres://postgres:password@localhost:5432/reddit_crawler
+2025-10-23 19:06:11,787 - reddit_crawler - INFO - Fetching data from PostgreSQL database...
+2025-10-23 19:06:11,788 - reddit_crawler - DEBUG - Select query: SELECT unique_name FROM Subreddit
+2025-10-23 19:06:11,795 - reddit_crawler - INFO - No New Subreddit Found
+2025-10-23 19:06:11,796 - reddit_crawler - INFO - Stored batch 3 with 2 subreddits
+2025-10-23 19:06:11,796 - reddit_crawler - INFO - Sleeping for 15 seconds before next request
+2025-10-23 19:06:26,796 - reddit_crawler - INFO - Fetching batch 4/4
+2025-10-23 19:06:26,796 - reddit_crawler - DEBUG - Next Page: t5_2cneq
+2025-10-23 19:06:26,797 - reddit_crawler - INFO - Connecting to PostgreSQL database...
+2025-10-23 19:06:26,797 - reddit_crawler - DEBUG - DATABASE_URL: postgres://postgres:password@localhost:5432/reddit_crawler
+2025-10-23 19:06:26,815 - reddit_crawler - INFO - Fetching data from PostgreSQL database...
+2025-10-23 19:06:26,815 - reddit_crawler - DEBUG - Select query: SELECT unique_name FROM Subreddit
+2025-10-23 19:06:26,820 - reddit_crawler - INFO - No New Subreddit Found
+2025-10-23 19:06:26,820 - reddit_crawler - INFO - Stored batch 4 with 2 subreddits
+2025-10-23 19:06:26,821 - reddit_crawler - INFO - Completed 4 requests this minute, waiting until next minute
+2025-10-23 19:06:41,821 - reddit_crawler - INFO - Finished fetching all SubReddits
+2025-10-23 19:06:41,821 - reddit_crawler - INFO - Scheduling Job for collecting list of subreddits
+2025-10-23 19:06:41,821 - reddit_crawler - INFO - Initialing Producer
+2025-10-23 19:06:41,821 - reddit_crawler - DEBUG - queue: enqueue-crawl-list-of-subreddit, jobtype: enqueue_crawl_list_of_subreddit
+2025-10-23 19:06:41,821 - reddit_crawler - DEBUG - Faktory server URL: tcp://:password@localhost:7419
+2025-10-23 19:06:41,841 - reddit_crawler - INFO - Scheduled job 'enqueue_crawl_list_of_subreddit' on queue 'enqueue-crawl-list-of-subreddit' to run at 2025-11-22T23:06:41.83950Z
+2025-10-23 19:06:41,841 - reddit_crawler - INFO - Completed Scheduling Job for collecting list of subreddits
+2025-10-23 19:07:29,898 - reddit_crawler - INFO - Initialing Producer
+2025-10-23 19:07:29,898 - reddit_crawler - DEBUG - queue: enqueue-crawl-list-of-subreddit, jobtype: enqueue_crawl_list_of_subreddit
+2025-10-23 19:07:29,898 - reddit_crawler - DEBUG - Faktory server URL: tcp://:password@localhost:7419
+2025-10-23 19:07:29,923 - reddit_crawler - INFO - Scheduled job 'enqueue_crawl_list_of_subreddit' on queue 'enqueue-crawl-list-of-subreddit' to run at 2025-10-23T23:08:29.92194Z
+2025-10-23 19:07:32,828 - reddit_crawler - INFO - 🚀 Starting Faktory consumer for updating Subreddit...
+2025-10-23 19:07:32,828 - reddit_crawler - INFO - Initialing Consumer
+2025-10-23 19:07:32,829 - reddit_crawler - DEBUG - queue: ['enqueue-crawl-list-of-subreddit'], jobtype: ['enqueue_crawl_list_of_subreddit']
+2025-10-23 19:07:32,829 - reddit_crawler - DEBUG - Faktory server URL: tcp://:password@localhost:7419
+2025-10-23 19:07:39,831 - reddit_crawler - INFO - Starting Subreddits fetch cycle
+2025-10-23 19:07:39,831 - reddit_crawler - INFO - Starting new 1-minute cycle with 4 requests
+2025-10-23 19:07:39,831 - reddit_crawler - INFO - Fetching batch 1/4
+2025-10-23 19:07:39,832 - reddit_crawler - DEBUG - Final prepared request URL: https://api.reddit.com/subreddits?limit=100
+2025-10-23 19:07:39,832 - reddit_crawler - INFO - Making request to: https://api.reddit.com/subreddits
+2025-10-23 19:07:39,832 - reddit_crawler - DEBUG - Params: {'limit': 100}
+2025-10-23 19:07:41,420 - reddit_crawler - INFO - Successfully fetched data from subreddits
+2025-10-23 19:07:41,420 - reddit_crawler - DEBUG - Next Page: t5_48t85
+2025-10-23 19:07:41,421 - reddit_crawler - INFO - Connecting to PostgreSQL database...
+2025-10-23 19:07:41,421 - reddit_crawler - DEBUG - DATABASE_URL: postgres://postgres:password@localhost:5432/reddit_crawler
+2025-10-23 19:07:41,445 - reddit_crawler - INFO - Fetching data from PostgreSQL database...
+2025-10-23 19:07:41,445 - reddit_crawler - DEBUG - Select query: SELECT unique_name FROM Subreddit
+2025-10-23 19:07:41,453 - reddit_crawler - INFO - Inserting bulk data into PostgreSQL database...
+2025-10-23 19:07:41,453 - reddit_crawler - DEBUG - Bulk insert query: INSERT INTO Subreddit (unique_name, title, subscribers, description, lang, url, created_utc, icon_img, over18) VALUES %s
+2025-10-23 19:07:41,535 - reddit_crawler - INFO - Bulk data inserted successfully.
+2025-10-23 19:07:41,535 - reddit_crawler - INFO - PostgreSQL connection closed.
+2025-10-23 19:07:41,536 - reddit_crawler - INFO - Stored batch 1 with 100 subreddits
+2025-10-23 19:07:41,536 - reddit_crawler - INFO - Sleeping for 15 seconds before next request
+2025-10-23 19:07:56,536 - reddit_crawler - INFO - Fetching batch 2/4
+2025-10-23 19:07:56,536 - reddit_crawler - DEBUG - Final prepared request URL: https://api.reddit.com/subreddits?limit=100&after=t5_48t85
+2025-10-23 19:07:56,537 - reddit_crawler - INFO - Making request to: https://api.reddit.com/subreddits
+2025-10-23 19:07:56,537 - reddit_crawler - DEBUG - Params: {'limit': 100, 'after': 't5_48t85'}
+2025-10-23 19:07:57,525 - reddit_crawler - INFO - Successfully fetched data from subreddits
+2025-10-23 19:07:57,525 - reddit_crawler - DEBUG - Next Page: t5_2qh1q
+2025-10-23 19:07:57,526 - reddit_crawler - INFO - Connecting to PostgreSQL database...
+2025-10-23 19:07:57,526 - reddit_crawler - DEBUG - DATABASE_URL: postgres://postgres:password@localhost:5432/reddit_crawler
+2025-10-23 19:07:57,550 - reddit_crawler - INFO - Fetching data from PostgreSQL database...
+2025-10-23 19:07:57,550 - reddit_crawler - DEBUG - Select query: SELECT unique_name FROM Subreddit
+2025-10-23 19:07:57,556 - reddit_crawler - INFO - Inserting bulk data into PostgreSQL database...
+2025-10-23 19:07:57,556 - reddit_crawler - DEBUG - Bulk insert query: INSERT INTO Subreddit (unique_name, title, subscribers, description, lang, url, created_utc, icon_img, over18) VALUES %s
+2025-10-23 19:07:57,628 - reddit_crawler - INFO - Bulk data inserted successfully.
+2025-10-23 19:07:57,629 - reddit_crawler - INFO - PostgreSQL connection closed.
+2025-10-23 19:07:57,629 - reddit_crawler - INFO - Stored batch 2 with 100 subreddits
+2025-10-23 19:07:57,629 - reddit_crawler - INFO - Sleeping for 15 seconds before next request
+2025-10-23 19:08:12,630 - reddit_crawler - INFO - Fetching batch 3/4
+2025-10-23 19:08:12,630 - reddit_crawler - DEBUG - Final prepared request URL: https://api.reddit.com/subreddits?limit=100&after=t5_2qh1q
+2025-10-23 19:08:12,630 - reddit_crawler - INFO - Making request to: https://api.reddit.com/subreddits
+2025-10-23 19:08:12,631 - reddit_crawler - DEBUG - Params: {'limit': 100, 'after': 't5_2qh1q'}
+2025-10-23 19:08:13,627 - reddit_crawler - INFO - Successfully fetched data from subreddits
+2025-10-23 19:08:13,627 - reddit_crawler - DEBUG - Next Page: t5_2qixk
+2025-10-23 19:08:13,629 - reddit_crawler - INFO - Connecting to PostgreSQL database...
+2025-10-23 19:08:13,629 - reddit_crawler - DEBUG - DATABASE_URL: postgres://postgres:password@localhost:5432/reddit_crawler
+2025-10-23 19:08:13,661 - reddit_crawler - INFO - Fetching data from PostgreSQL database...
+2025-10-23 19:08:13,661 - reddit_crawler - DEBUG - Select query: SELECT unique_name FROM Subreddit
+2025-10-23 19:08:13,668 - reddit_crawler - INFO - Inserting bulk data into PostgreSQL database...
+2025-10-23 19:08:13,669 - reddit_crawler - DEBUG - Bulk insert query: INSERT INTO Subreddit (unique_name, title, subscribers, description, lang, url, created_utc, icon_img, over18) VALUES %s
+2025-10-23 19:08:13,752 - reddit_crawler - INFO - Bulk data inserted successfully.
+2025-10-23 19:08:13,752 - reddit_crawler - INFO - PostgreSQL connection closed.
+2025-10-23 19:08:13,753 - reddit_crawler - INFO - Stored batch 3 with 100 subreddits
+2025-10-23 19:08:13,753 - reddit_crawler - INFO - Sleeping for 15 seconds before next request
