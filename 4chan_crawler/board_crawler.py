@@ -8,9 +8,13 @@ from constants.plsql_constants import (
     INSERT_BULK_BOARD_DATA_QUERY,
     SELECT_BOARD_CODE_QUERY,
 )
-from constants.constants import CHAN_CRAWLER, FAKTORY_CONSUMER_ROLE, FAKTORY_PRODUCER_ROLE
+from constants.constants import (
+    CHAN_CRAWLER,
+    FAKTORY_CONSUMER_ROLE,
+    FAKTORY_PRODUCER_ROLE,
+)
 from dotenv import load_dotenv
-from utils.faktory import init_faktory_client
+from utils.faktory import initialize_producer
 from utils.logger import Logger
 from utils.plsql import PLSQL
 
@@ -87,38 +91,26 @@ def fetch_and_save_boards():
     plsql = PLSQL()
     current_boards_raw = plsql.get_data_from(SELECT_BOARD_CODE_QUERY)
     # logger.debug(f"current_boards_raw {current_boards_raw}")
-    current_boards = {row[0] for row in current_boards_raw} 
+    current_boards = {row[0] for row in current_boards_raw}
     logger.debug(f"Current Boards {current_boards}")
     for board in boards:
         board_code = board.get("board", "N/A")
         if board_code not in current_boards:
             board_title = board.get("title", "No Title")
-            board_meta_description = board.get("meta_description", "No Meta Description")
+            board_meta_description = board.get(
+                "meta_description", "No Meta Description"
+            )
             ws_board = board.get("ws_board", 0)
             values.append((board_code, board_title, board_meta_description, ws_board))
-    if (len(values) == 0):
+    if len(values) == 0:
         logger.info("No New Boards found")
     else:
         logger.info(f"New Boards found {values}")
         plsql.insert_bulk_data_into_db(INSERT_BULK_BOARD_DATA_QUERY, values)
         plsql.close_connection()
 
-    init_faktory_client(
-        role=FAKTORY_PRODUCER_ROLE,
-        jobtype="enqueue_crawl_boards",
-        queue="enqueue-crawl-boards",
+    initialize_producer(
+        queue="enqueue-crawl-list-of-boards",
+        jobtype="enqueue_crawl_list_of_boards",
         delayedTimer=datetime.timedelta(days=30),
-    )
-
-
-if __name__ == "__main__":
-    """
-    Entry point for the board crawler script.
-    """
-    logger.info("Starting 4chan Board Crawler...")
-    init_faktory_client(
-        role=FAKTORY_CONSUMER_ROLE,
-        queue="enqueue-crawl-boards",
-        jobtype="enqueue_crawl_boards",
-        fn=fetch_and_save_boards,
     )

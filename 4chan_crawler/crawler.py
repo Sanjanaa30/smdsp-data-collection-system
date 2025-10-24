@@ -10,12 +10,21 @@ Commands:
     --help                        Display available commands and usage.
 """
 
-import argparse
 import os
-from constants.constants import CHAN_CRAWLER
+import argparse
+from constants.constants import (
+    CHAN_CRAWLER,
+    FAKTORY_SERVER_URL,
+    FAKTORY_CONCURRENCY,
+    FAKTORY_CONSUMER_ROLE
+)
 from utils.faktory import initialize_consumer
 from utils.logger import Logger
 from board_crawler import fetch_and_save_boards
+from thread_crawler import ThreadCrawler
+from pyfaktory import Client, Consumer
+
+
 # from posts_crawler import get_posts
 
 logger = Logger(CHAN_CRAWLER).get_logger()
@@ -48,21 +57,43 @@ class CrawlerConsumer:
         logger.info(
             f"🚀 Starting Faktory consumer for collecting posts: {self.collect_posts}"
         )
-        logger.info(self.collect_posts)
-        queue = [
-            f"enqueue-crawl-{boards_name.lower()}"
+        queue_thread_listing = [
+            f"enqueue-crawl-listing-{boards_name.lower()}"
             for boards_name in self.collect_posts
         ]
-        jobtype = [
-            f"enqueue_crawl_{boards_name.lower()}"
+        jobtypes_thread_listing = [
+            f"enqueue_crawl_listing_{boards_name.lower()}"
             for boards_name in self.collect_posts
         ]
 
-        logger.info(queue, jobtype)
-        concurrency = os.getenv("FAKTORY_CONCURRENCY", 2)
-        # initialize_consumer(
-        #     queue=queue, jobtypes=jobtype, fn=get_posts, concurrency=int(concurrency)
-        # )
+        queue_thread_crawling = [
+            f"enqueue-crawl-thread-{boards_name.lower()}"
+            for boards_name in self.collect_posts
+        ]
+
+        jobtypes_thread_crawling = [
+            f"enqueue_crawl_thread_{boards_name.lower()}"
+            for boards_name in self.collect_posts
+        ]
+        faktory_server_url = os.getenv(FAKTORY_SERVER_URL)
+        concurrency = int(os.getenv(FAKTORY_CONCURRENCY, 2))
+        thread_crawler = ThreadCrawler()
+        try:
+            with Client(
+                faktory_url=faktory_server_url, role=FAKTORY_CONSUMER_ROLE
+            ) as client:
+                consumer = Consumer(
+                    client=client,
+                    queues=["default"] + queue_thread_listing + queue_thread_crawling,
+                    concurrency=concurrency,
+                )
+                for jobtype in jobtypes_thread_listing:
+                    consumer.register(jobtype, thread_crawler.get_threads_from_board)
+                for jobtype in jobtypes_thread_crawling:
+                    consumer.register(jobtype, thread_crawler.collect_and_store_posts)
+                consumer.run()
+        except Exception as e:
+            logger.debug(f"Error connecting to Faktory server: {e}")
 
     def run(self):
         """Run the appropriate Faktory consumer based on CLI arguments."""

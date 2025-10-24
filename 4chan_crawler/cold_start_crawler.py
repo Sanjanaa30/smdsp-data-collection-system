@@ -58,8 +58,8 @@ class ColdStartCrawler:
 
         for board_name in self.collect_posts:
             initialize_producer(
-                jobtype=f"enqueue_crawl_{board_name.lower()}",
-                queue=f"enqueue-crawl-{board_name.lower()}",
+                queue=f"enqueue-crawl-listing-{board_name.lower()}",
+                jobtype=f"enqueue_crawl_listing_{board_name.lower()}",
                 delayedTimer=datetime.timedelta(seconds=60),
                 args=[
                     board_name.lower(),
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     args = parse_arguments()
 
     crawler = ColdStartCrawler(
-        update_new_board=args.update_new_boards,
+        update_new_boards=args.update_new_boards,
         collect_posts=args.collect_posts,
     )
 
