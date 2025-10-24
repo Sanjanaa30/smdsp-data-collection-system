@@ -77,6 +77,7 @@ class CrawlerConsumer:
         ]
         faktory_server_url = os.getenv(FAKTORY_SERVER_URL)
         concurrency = int(os.getenv(FAKTORY_CONCURRENCY, 2))
+        logger.info(f"Concurrency {concurrency}")
         thread_crawler = ThreadCrawler()
         try:
             with Client(
