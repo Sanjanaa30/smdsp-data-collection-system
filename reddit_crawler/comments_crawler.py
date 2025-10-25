@@ -29,7 +29,9 @@ def fetch_subreddit_comments(
         params["after"] = after
 
     # Make API request to fetch comments for the subreddit
-    response = reddit_client.make_request(f"r/{subreddit_name}/comments/", params=params)
+    response = reddit_client.make_request(
+        f"r/{subreddit_name}/comments/", params=params
+    )
 
     comments: List[Comment] = []
 
@@ -120,7 +122,7 @@ def crawl_comments_for_subreddit(
         old_comments_ids = set()
     else:
         old_comments_ids = set(old_comments_ids)
-    
+
     logger.info(f"Collecting comments for {subreddit_name} posts")
     logger.info(f"Starting SubReddit: {subreddit_name} Posts fetch cycle")
     after = None

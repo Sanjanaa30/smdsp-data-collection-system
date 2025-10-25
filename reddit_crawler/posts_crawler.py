@@ -126,7 +126,9 @@ def get_posts(subreddit_name, old_posts: list = []):
                     queue=f"enqueue-crawl-comments-{subreddit_name}",
                     jobtype=f"enqueue_crawl_comments_{subreddit_name}",
                     delayedTimer=datetime.timedelta(minutes=5),
-                    args=[list(posts_ids), ],
+                    args=[
+                        list(posts_ids),
+                    ],
                 )
 
             if not after:

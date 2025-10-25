@@ -19,15 +19,15 @@ class PLSQL:
         logger.debug(f"DATABASE_URL: {DATABASE_URL}")
         self.conn = psycopg2.connect(dsn=DATABASE_URL)
         self.cur = self.conn.cursor()
-    
+
     def execute_query(self, query: str, params=None):
         """
         Execute a query and return the results.
-        
+
         Args:
             query (str): The SQL query to execute
             params (tuple, optional): Parameters for the query
-            
+
         Returns:
             list: List of tuples containing the query results, or empty list on error
         """
@@ -36,18 +36,22 @@ class PLSQL:
             logger.debug(f"Query: {query}")
             if params:
                 logger.debug(f"Parameters: {params}")
-            
+
             self.cur.execute(query, params)
-            
+
             # Check if the query returns data (SELECT, RETURNING, etc.)
             if self.cur.description:
                 records = self.cur.fetchall()
-                logger.info(f"Query executed successfully. Fetched {len(records)} record(s).")
+                logger.info(
+                    f"Query executed successfully. Fetched {len(records)} record(s)."
+                )
                 return records
             else:
                 # For queries that don't return data (INSERT, UPDATE, DELETE without RETURNING)
                 self.conn.commit()
-                logger.info(f"Query executed successfully. Rows affected: {self.cur.rowcount}")
+                logger.info(
+                    f"Query executed successfully. Rows affected: {self.cur.rowcount}"
+                )
                 return []
         except Exception as e:
             logger.error(f"Error executing query: {e}")
