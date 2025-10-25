@@ -48,6 +48,10 @@ def fetch_posts(subreddit_name, after=None):
                 }
 
                 post_data_dict = {field: data.get(field, "") for field in POST_FIELDS}
+                
+                # Convert 'edited' field to boolean (Reddit returns false or timestamp)
+                edited_value = post_data_dict.get("edited", False)
+                post_data_dict["edited"] = bool(edited_value) and edited_value is not False
 
                 detailedPost = DetailedPost(**post_detailed_data_dict)
                 post_data_dict["post_details"] = detailedPost
