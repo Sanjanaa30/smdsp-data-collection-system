@@ -9,7 +9,7 @@ from constants.constants import (
 from modal.post import Post, DetailedPost
 from utils.logger import Logger
 from utils.plsql import PLSQL
-from constants.plsql_constants import BULK_INSERT_POSTS
+from constants.plsql_constants import BULK_INSERT_POSTS, SELECT_UNIQUE_NAME_POSTS
 import os
 import datetime
 
@@ -18,7 +18,7 @@ logger = Logger(REDDIT_CRAWLER).get_logger()
 reddit_client = RedditClient()
 
 
-def fetch_posts(subreddit_name, old_posts: set, after=None):
+def fetch_posts(subreddit_name, after=None):
     """
     Fetches subreddit data from Reddit API starting from `after` cursor.
     Returns a list of posts objects and next page cursor.
@@ -33,7 +33,6 @@ def fetch_posts(subreddit_name, old_posts: set, after=None):
     # response = json.loads(response)
     response = reddit_client.make_request(f"r/{subreddit_name}", params=params)
     posts = []
-    posts_ids = set()
     if response:
         try:
             after = response["data"].get("after", None)
@@ -43,17 +42,6 @@ def fetch_posts(subreddit_name, old_posts: set, after=None):
 
             for child in children:
                 data = child["data"]
-
-                unique_identifer = data.get("name", "")
-                if unique_identifer in old_posts:
-                    logger.debug("Breaking loop old posts found")
-                    after = None
-                    break
-                else:
-                    # Adding unique identifier to the set
-                    old_posts.add(data.get("name", ""))
-                    if data.get("id", "") != "":
-                        posts_ids.add(data.get("id", ""))
 
                 post_detailed_data_dict = {
                     field: data.get(field, "") for field in POST_DETAILED_FIELDS
@@ -70,12 +58,12 @@ def fetch_posts(subreddit_name, old_posts: set, after=None):
                 posts.append(post)
 
             logger.debug(f"Total Records fetched: {len(posts)}")
-            return posts, after, old_posts, posts_ids
+            return posts, after
 
         except (KeyError, TypeError, ValueError) as e:
             logger.error(f"Error parsing subreddit data: {e}")
 
-    return [], None, old_posts, set()
+    return [], None, set()
 
 
 def store_ps_in_db(posts: list):
@@ -84,12 +72,12 @@ def store_ps_in_db(posts: list):
     Uses bulk insert query via PLSQL helper.
     """
     plsql = PLSQL()
-    # unique_posts_in_db = plsql.get_data_from(SELECT_UNIQUE_NAME_POSTS)
-    # unique_posts_values = {row[0] for row in unique_posts_in_db}
+    unique_posts_in_db = plsql.get_data_from(SELECT_UNIQUE_NAME_POSTS)
+    unique_posts_values = {row[0] for row in unique_posts_in_db}
     posts_data = [
         post.to_tuple()
         for post in posts
-        # if post.get_unique_identifer() not in unique_posts_values
+        if post.get_unique_identifer() not in unique_posts_values
     ]
     # logger.debug(f"Inserting posts_data {posts_data}")
     if len(posts_data) == 0:
@@ -99,7 +87,7 @@ def store_ps_in_db(posts: list):
         plsql.close_connection()
 
 
-def get_posts(subreddit_name, old_posts: list = []):
+def get_posts(subreddit_name):
     """
     Fetches data 4 times, waiting 15 seconds between requests,
     paginating through the results and storing each batch in DB.
@@ -112,24 +100,12 @@ def get_posts(subreddit_name, old_posts: list = []):
         logger.info("Starting new 1-minute cycle with 4 requests")
         for i in range(2):
             logger.info(f"Fetching batch {i + 1}/2")
-            posts, after, old_posts, posts_ids = fetch_posts(
-                subreddit_name, set(old_posts), after
-            )
+            posts, after = fetch_posts(subreddit_name, after)
             if posts:
                 store_ps_in_db(posts)
                 logger.info(f"Stored batch {i + 1} with {len(posts)} posts")
             else:
                 logger.warning(f"No data fetched on batch {i + 1}")
-
-            if posts_ids:
-                initialize_producer(
-                    queue=f"enqueue-crawl-comments-{subreddit_name}",
-                    jobtype=f"enqueue_crawl_comments_{subreddit_name}",
-                    delayedTimer=datetime.timedelta(minutes=5),
-                    args=[
-                        list(posts_ids),
-                    ],
-                )
 
             if not after:
                 logger.info("No more pages available, finished fetching all data")
@@ -153,6 +129,6 @@ def get_posts(subreddit_name, old_posts: list = []):
         queue=f"enqueue-crawl-{subreddit_name}",
         jobtype=f"enqueue_crawl_{subreddit_name}",
         delayedTimer=datetime.timedelta(minutes=5),
-        args=[subreddit_name.lower(), list(old_posts)],
+        args=[subreddit_name.lower()],
     )
     logger.info(f"Completed Scheduling Job for collecting {subreddit_name}")

@@ -16,9 +16,7 @@ logger = Logger(REDDIT_CRAWLER).get_logger()
 reddit_client = RedditClient()
 
 
-def fetch_subreddit_comments(
-    subreddit_name: str, after: Optional[str] = None, old_comments_ids: set = ()
-):
+def fetch_subreddit_comments(subreddit_name: str, after: Optional[str] = None):
     """
     Fetches a page of recent comments for a given subreddit.
     Returns a list of Comment objects and the 'after' cursor for pagination.
@@ -46,15 +44,6 @@ def fetch_subreddit_comments(
             for child in children:
                 data = child["data"]
 
-                unique_identifer = data.get("id", "")
-                if unique_identifer in old_comments_ids:
-                    logger.debug("Breaking loop old posts found")
-                    after = None
-                    break
-                else:
-                    # Adding unique identifier to the set
-                    old_comments_ids.add(data.get("id", ""))
-
                 comment_detailed_data_dict = {
                     field: data.get(field, "") for field in COMMENT_DETAILS_FIELDS
                 }
@@ -72,12 +61,12 @@ def fetch_subreddit_comments(
                 comments.append(comment)
 
             logger.debug(f"Total Records fetched: {len(comments)}")
-            return comments, after, old_comments_ids
+            return comments, after
 
         except (KeyError, TypeError, ValueError) as e:
             logger.error(f"Error parsing comment data: {e}")
 
-    return [], None, old_comments_ids
+    return [], None
 
 
 def store_comments_in_db(comments: List[Comment]) -> None:
@@ -111,17 +100,11 @@ def store_comments_in_db(comments: List[Comment]) -> None:
     plsql.close_connection()
 
 
-def crawl_comments_for_subreddit(
-    subreddit_name: str, old_comments_ids: list = None
-) -> None:
+def crawl_comments_for_subreddit(subreddit_name: str) -> None:
     """
     Paginates through recent comments for each post_id,
     making requests and storing comments until no more pages are available.
     """
-    if old_comments_ids is None:
-        old_comments_ids = set()
-    else:
-        old_comments_ids = set(old_comments_ids)
 
     logger.info(f"Collecting comments for {subreddit_name} posts")
     logger.info(f"Starting SubReddit: {subreddit_name} Posts fetch cycle")
@@ -132,9 +115,7 @@ def crawl_comments_for_subreddit(
         logger.info("Starting new 1-minute cycle with 4 requests")
         for i in range(2):
             logger.info(f"Fetching batch {i + 1}/2")
-            comments, after, old_comments_ids = fetch_subreddit_comments(
-                subreddit_name, after, old_comments_ids
-            )
+            comments, after = fetch_subreddit_comments(subreddit_name, after)
             if comments:
                 store_comments_in_db(comments)
                 logger.info(f"Stored batch {i + 1} with {len(comments)} posts")
@@ -154,7 +135,7 @@ def crawl_comments_for_subreddit(
         queue=f"enqueue-crawl-comments-{subreddit_name}",
         jobtype=f"enqueue_crawl_comments_{subreddit_name}",
         delayedTimer=datetime.timedelta(minutes=5),
-        args=[subreddit_name.lower(), list(old_comments_ids)],
+        args=[subreddit_name.lower()],
     )
     logger.info(f"Completed Scheduling Job for collecting {subreddit_name}")
 

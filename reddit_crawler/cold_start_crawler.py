@@ -65,9 +65,7 @@ class ColdStartCrawler:
                 jobtype=f"enqueue_crawl_{subreddit_name.lower()}",
                 queue=f"enqueue-crawl-{subreddit_name.lower()}",
                 delayedTimer=datetime.timedelta(seconds=60),
-                args=[
-                    subreddit_name.lower(),
-                ],
+                args=[subreddit_name.lower()],
             )
 
         logger.info(
@@ -90,9 +88,7 @@ class ColdStartCrawler:
                 queue=f"enqueue-crawl-comments-{subreddit_name.strip().lower()}",
                 jobtype=f"enqueue_crawl_comments_{subreddit_name.strip().lower()}",
                 delayedTimer=datetime.timedelta(seconds=60),
-                args=[
-                    subreddit_name.lower(),
-                ],
+                args=[subreddit_name.lower()],
             )
 
         logger.info(
