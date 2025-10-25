@@ -52,3 +52,34 @@ POST_DETAILED_FIELDS = [
     "removal_reason",
     "is_robot_indexable",
 ]
+
+
+COMMENT_FIELDS = [
+    "id",
+    "subreddit_id",
+    "subreddit",
+    "author",
+    "parent_id",
+    "over_18",
+    "body",
+    "link_id",
+    "created_utc",
+    "link_url",
+]
+
+COMMENT_DETAILS_FIELDS = [
+    "ups",
+    "downs",
+    "num_reports",
+    "total_awards_received",
+    "likes",
+    "replies",
+    "user_reports",
+    "mod_reason_title",
+    "gilded",
+    "num_comments",
+    "report_reasons",
+    "removal_reason",
+    "controversiality",
+    "top_awarded_type",
+]

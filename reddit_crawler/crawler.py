@@ -6,8 +6,9 @@ A command-line tool for starting Faktory consumers that handle cold-start crawli
 
 Commands:
     --update-new-subreddit      Start a consumer to enqueue jobs for updating new Subreddit.
-    --collect-posts [names]       Start a consumer to enqueue jobs for collecting posts for given Subreddit.
-    --help                        Display available commands and usage.
+    --collect-posts [names]     Start a consumer to enqueue jobs for collecting posts for given Subreddit.
+    --collect-comments [names]  Start a consumer to enqueue jobs for collecting comments for given Subreddit.
+    --help                      Display available commands and usage.
 """
 
 import argparse
@@ -17,6 +18,7 @@ from utils.faktory import initialize_consumer
 from utils.logger import Logger
 from subreddit_crawler import get_list_of_subreddit
 from posts_crawler import get_posts
+from comments_crawler import crawl_comments_for_subreddit
 
 logger = Logger(REDDIT_CRAWLER).get_logger()
 
@@ -30,9 +32,11 @@ class CrawlerConsumer:
         self,
         update_new_subreddit: bool = False,
         collect_posts: list[str] | None = None,
+        collect_comments: list[str] | None = None,
     ):
         self.update_new_subreddit = update_new_subreddit
         self.collect_posts = collect_posts
+        self.collect_comments = collect_comments
 
     def start_update_consumer(self):
         """Start Faktory consumer for updating Subreddit."""
@@ -64,6 +68,28 @@ class CrawlerConsumer:
             queue=queue, jobtypes=jobtype, fn=get_posts, concurrency=int(concurrency)
         )
 
+    def start_collect_comments_consumer(self):
+        """Start Faktory consumer for collecting comments."""
+        logger.info(
+            f"🚀 Starting Faktory consumer for collecting comments: {self.collect_comments}"
+        )
+        queue = [
+            f"enqueue-crawl-comments-{subreddit_name.lower()}"
+            for subreddit_name in self.collect_comments
+        ]
+        jobtype = [
+            f"enqueue_crawl_comments_{subreddit_name.lower()}"
+            for subreddit_name in self.collect_comments
+        ]
+
+        concurrency = os.getenv("FAKTORY_CONCURRENCY", 2)
+        initialize_consumer(
+            queue=queue,
+            jobtypes=jobtype,
+            fn=crawl_comments_for_subreddit,
+            concurrency=int(concurrency),
+        )
+
     def run(self):
         """Run the appropriate Faktory consumer based on CLI arguments."""
         if self.update_new_subreddit:
@@ -72,11 +98,14 @@ class CrawlerConsumer:
         if self.collect_posts:
             self.start_collect_consumer()
 
+        if self.collect_comments:
+            self.start_collect_comments_consumer()
+
 
 def parse_arguments():
     """Parse command-line arguments and return parsed values."""
     parser = argparse.ArgumentParser(
-        description="Start Faktory consumers for crawling subreddit or collecting posts."
+        description="Start Faktory consumers for crawling subreddit, collecting posts, or collecting comments."
     )
 
     parser.add_argument(
@@ -88,7 +117,13 @@ def parse_arguments():
     parser.add_argument(
         "--collect-posts",
         nargs="+",
-        help="Start a consumer to enqueue crawl jobs for specified subreddit (space-separated).",
+        help="Start a consumer to enqueue crawl jobs for specified subreddit posts (space-separated).",
+    )
+
+    parser.add_argument(
+        "--collect-comments",
+        nargs="+",
+        help="Start a consumer to enqueue crawl jobs for specified subreddit comments (space-separated).",
     )
 
     return parser.parse_args()
@@ -100,6 +135,7 @@ if __name__ == "__main__":
     consumer = CrawlerConsumer(
         update_new_subreddit=args.update_new_subreddit,
         collect_posts=args.collect_posts,
+        collect_comments=args.collect_comments,
     )
 
     consumer.run()
