@@ -1,6 +1,7 @@
 import datetime
 import os
 from typing import Callable, Optional
+from pathlib import Path
 from dotenv import load_dotenv
 from utils.logger import Logger
 from pyfaktory import Client, Consumer, Job, Producer
@@ -11,7 +12,10 @@ from constants.constants import (
     FAKTORY_PRODUCER_ROLE,
 )
 
-load_dotenv()
+# Load environment from the package .env to ensure consistent behavior
+# regardless of current working directory (aligns with plsql.py)
+# Load only the package-specific .env to avoid picking up unrelated root env
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 logger = Logger(REDDIT_CRAWLER).get_logger()
 

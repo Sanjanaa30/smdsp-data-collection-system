@@ -28,3 +28,16 @@ POSTS_FIELDS = [
     "bumplimit",
     "archived_on",
 ]
+
+# --- Toxicity scoring (Faktory + attrs) ---
+TOX_QUEUE = "toxicity"
+TOX_JOBTYPE = "score_post_toxicity"
+
+# Perspective attributes we request
+PERSPECTIVE_ATTRS = [
+    "TOXICITY", "SEVERE_TOXICITY", "IDENTITY_ATTACK", "INSULT", "THREAT"
+]
+
+# Env var name for default language (matches your .env)
+DEFAULT_LANG_ENV = "PERSPECTIVE_LANG_DEFAULT"
+DEFAULT_LANG = "en"
