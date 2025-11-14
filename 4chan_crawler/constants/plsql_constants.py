@@ -14,6 +14,17 @@ INSERT_BULK_POSTS_DATA_QUERY = "INSERT INTO posts (board_name, post_no, name, su
 SELECT_COUNT_BOARD_QUERY = "SELECT board_name, date_trunc('hour', created_at) AS hour, COUNT(*) AS post_count FROM posts GROUP BY board_name, hour ORDER BY hour DESC;"
 SELECT_COUNT_HOUR_QUERY = "SELECT date_trunc('hour', created_at) AS hour, COUNT(*) AS post_count FROM posts GROUP BY hour ORDER BY hour DESC;"
 
+# Query to check which post numbers DO NOT exist in the database for a given board
+# Returns only the post numbers that are not present in the database
+CHECK_EXISTING_POSTS_QUERY = """
+SELECT candidate_post_no
+FROM unnest(%s::bigint[]) AS candidate_post_no
+WHERE NOT EXISTS (
+    SELECT 1 FROM posts 
+    WHERE board_name = %s AND post_no = candidate_post_no
+);
+"""
+
 # Select the latest row of a post (by board & post_no) in order to get its comment text
 # Gives one row per (board_name, post_no) pair” (the first one according to the ORDER BY below).
 SELECT_LATEST_POST_TEXT = """
