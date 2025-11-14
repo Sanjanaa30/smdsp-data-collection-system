@@ -1,19 +1,5 @@
-# Env files
 .env
-**/.env
-**/.env.local
-**/.env.*
-
-# Python virtual env & caches
 .venv
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Logs
 4chan_crawler/logs/*
 reddit_crawler/logs/*
-
-# VS Code
-.vscode/

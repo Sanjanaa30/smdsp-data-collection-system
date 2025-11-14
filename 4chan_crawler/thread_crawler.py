@@ -2,7 +2,7 @@ from chan_client import ChanClient
 from typing import List, Dict, Any
 from utils.logger import Logger
 from constants.constants import CHAN_CRAWLER, POSTS_FIELDS
-from constants.api_constants import THREAD, THREADS, DOT_JSON
+from constants.api_constants import THREAD, THREADS, DOT_JSON, FOURCHAN_BASE_URL
 from constants.plsql_constants import INSERT_BULK_POSTS_DATA_QUERY
 from utils.faktory import initialize_producer
 from toxicity import enqueue_toxicity
@@ -20,7 +20,7 @@ class ThreadCrawler:
 
     def __init__(self):
         """Initialize the thread crawler with a ChanClient instance."""
-        self.client = ChanClient()
+        self.client = ChanClient(FOURCHAN_BASE_URL)
 
     def threads_json_to_thread_number(self, thread_list) -> set:
         thread_numbers = set()
