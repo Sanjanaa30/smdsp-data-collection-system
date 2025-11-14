@@ -1,4 +1,12 @@
 import os
+import sys
+from pathlib import Path
+
+# Make sure Python can find the 4chan_crawler package (one level up from /script)
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent
+sys.path.append(str(PROJECT_ROOT))
+
 from utils.logger import Logger
 from utils.plsql import PLSQL
 from constants.plsql_constants import SELECT_UNSCORED_POSTS

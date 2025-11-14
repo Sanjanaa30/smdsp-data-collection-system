@@ -5,6 +5,7 @@ from constants.constants import CHAN_CRAWLER, POSTS_FIELDS
 from constants.api_constants import THREAD, THREADS, DOT_JSON
 from constants.plsql_constants import INSERT_BULK_POSTS_DATA_QUERY
 from utils.faktory import initialize_producer
+from toxicity import enqueue_toxicity
 from modal.posts import Posts
 import datetime
 
@@ -157,6 +158,20 @@ class ThreadCrawler:
             logger.info(
                 f"Successfully inserted {len(post_records)} posts into the database."
             )
+
+            # Enqueue posts for toxicity analysis
+            for post in posts:
+                try:
+                    enqueue_toxicity(
+                        board_name=post.board_name,
+                        post_no=post.post_no,
+                        delay_seconds=5,
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Error enqueuing post #{post.post_no} for toxicity analysis: {e}"
+                    )
+            
         except Exception as e:
             logger.error(f"Error inserting posts into the database: {e}")
         finally:

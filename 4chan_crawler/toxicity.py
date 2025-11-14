@@ -53,3 +53,4 @@ def enqueue_toxicity(board_name: str, post_no: int, delay_seconds: int = 0):
         args=[{"board_name": board_name, "post_no": int(post_no)}],
     )
     logger.info("Enqueued job for %s/%s (delay=%ss)", board_name, post_no, delay_seconds)
+

@@ -132,6 +132,7 @@ if __name__ == "__main__":
     consumer = CrawlerConsumer(
         update_new_boards=args.update_new_boards,
         collect_posts=args.collect_posts,
+        
     )
 
     consumer.run()

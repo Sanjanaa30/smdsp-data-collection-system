@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional, Tuple
 from dotenv import load_dotenv
 from utils.logger import Logger
 from utils.faktory import initialize_consumer
-from utils.toxicity import score_and_upsert
+from toxicity import score_and_upsert
 from constants.constants import (
     TOX_QUEUE,
     TOX_JOBTYPE,
