@@ -53,7 +53,7 @@ def trim_to_20kb(text: str) -> str:
     return trimmed_text
 
 
-def score_text(text: str, lang: str | None = None) -> dict:
+def score_text(text: str) -> dict:
     """
     Calls Perspective for the attributes in PERSPECTIVE_ATTRS.
     Returns lowercase keys that match your DB columns.
@@ -70,7 +70,7 @@ def score_text(text: str, lang: str | None = None) -> dict:
         logger.error("PERSPECTIVE_API_KEY not set in environment variables")
         raise RuntimeError("PERSPECTIVE_API_KEY not set")
 
-    lang = lang or os.getenv(DEFAULT_LANG_ENV, "en")
+    lang = os.getenv(DEFAULT_LANG_ENV, "en")
     logger.debug(f"Using language: {lang}")
 
     # text = (text or "")[:2800]

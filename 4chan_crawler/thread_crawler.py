@@ -1,13 +1,14 @@
-from chan_client import ChanClient
-from typing import List, Dict, Any
-from utils.logger import Logger
-from constants.constants import CHAN_CRAWLER, POSTS_FIELDS
-from constants.api_constants import THREAD, THREADS, DOT_JSON, FOURCHAN_BASE_URL
-from constants.plsql_constants import INSERT_BULK_POSTS_DATA_QUERY
-from utils.faktory import initialize_producer
-from toxicity import enqueue_toxicity
-from modal.posts import Posts
 import datetime
+from typing import Any, Dict, List
+
+from chan_client import ChanClient
+from constants.api_constants import DOT_JSON, FOURCHAN_BASE_URL, THREAD, THREADS
+from constants.constants import CHAN_CRAWLER, POSTS_FIELDS, TOX_JOBTYPE, TOX_QUEUE
+from constants.plsql_constants import INSERT_BULK_POSTS_DATA_QUERY
+from modal.posts import Posts
+from toxicity import enqueue_toxicity
+from utils.faktory import initialize_producer
+from utils.logger import Logger
 
 logger = Logger(CHAN_CRAWLER).get_logger()
 
@@ -32,7 +33,7 @@ class ThreadCrawler:
         return thread_numbers
 
     def get_threads_from_board(
-        self, board: str, old_threads: List = []
+        self, board: str, old_threads: List = [], score_toxicity: bool = False
     ) -> List[Dict[str, Any]]:
         """
         Fetch all threads from a specific board.
@@ -71,14 +72,14 @@ class ThreadCrawler:
             queue=f"enqueue-crawl-thread-{board}",
             jobtype=f"enqueue_crawl_thread_{board}",
             delayedTimer=datetime.timedelta(seconds=15),
-            args=[board, new_threads],
+            args=[board, new_threads, score_toxicity],
         )
 
         initialize_producer(
             queue=f"enqueue-crawl-listing-{board}",
             jobtype=f"enqueue_crawl_listing_{board}",
             delayedTimer=datetime.timedelta(minutes=5),
-            args=[board, old_threads],
+            args=[board, old_threads, score_toxicity],
         )
 
     def fetch_thread_posts(self, board_name, thread_ids):
@@ -171,13 +172,14 @@ class ThreadCrawler:
                     logger.error(
                         f"Error enqueuing post #{post.post_no} for toxicity analysis: {e}"
                     )
-            
         except Exception as e:
             logger.error(f"Error inserting posts into the database: {e}")
         finally:
             db_client.close_connection()
 
-    def collect_and_store_posts(self, board_name, thread_ids: list):
+    def collect_and_store_posts(
+        self, board_name, thread_ids: list, score_toxicity: bool = False
+    ):
         """
         Fetches posts for the given board and thread list, then stores them in the database.
         """
@@ -193,6 +195,22 @@ class ThreadCrawler:
         if posts:
             logger.info(f"Fetched {len(posts)} posts from {len(thread_ids)} threads.")
             self.save_posts_to_database(posts)
+
+            if score_toxicity:
+                logger.info(f"Scoring toxicity for {board_name}")
+                delay = datetime.timedelta(seconds=30)
+                input_toxicity = [
+                    post.get_attributes_for_toxicity() for post in posts if post.comment
+                ]
+                initialize_producer(
+                    queue=f"{TOX_QUEUE}-{board_name.lower()}",  # <— constants
+                    jobtype=f"{TOX_JOBTYPE}_{board_name.lower()}",  # <— constants
+                    delayedTimer=delay,
+                    args=[input_toxicity],
+                )
+                logger.debug(
+                    f"Scheduled collect toxicuty job with a total payload: {len(input_toxicity)}"
+                )
         else:
             logger.warning(f"No posts retrieved for board '{board_name}'.")
 

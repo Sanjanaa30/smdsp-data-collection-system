@@ -30,8 +30,8 @@ POSTS_FIELDS = [
 ]
 
 # --- Toxicity scoring (Faktory + attrs) ---
-TOX_QUEUE = "toxicity"
-TOX_JOBTYPE = "score_post_toxicity"
+TOX_QUEUE = "toxicity-queue"
+TOX_JOBTYPE = "toxicity_job"
 
 # Perspective attributes we request
 # Complete list of all available attributes from Google Perspective API

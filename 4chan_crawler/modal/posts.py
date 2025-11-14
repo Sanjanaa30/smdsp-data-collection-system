@@ -1,3 +1,5 @@
+from modal.toxicity import Toxicity
+
 class Posts:
     """
     Represents a 4chan thread post with its metadata, content, and board information.
@@ -43,6 +45,14 @@ class Posts:
     def get_post_number(self):
         """Return the unique post number."""
         return self.post_no
+
+    def get_attributes_for_toxicity(self):
+        """Returns the attributes need for toxicity"""
+        return Toxicity(self.post_no, self.board_name, self.comment)
+
+    # def is_comment_empty(self):
+    #     """Returns the attributes need for toxicity"""
+    #     return len(self.comment) == 0
 
     def to_tuple(self):
         """Return all attributes as a tuple."""
