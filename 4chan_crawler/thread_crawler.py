@@ -3,7 +3,10 @@ from typing import List, Dict, Any
 from utils.logger import Logger
 from constants.constants import CHAN_CRAWLER, POSTS_FIELDS
 from constants.api_constants import THREAD, THREADS, DOT_JSON
-from constants.plsql_constants import INSERT_BULK_POSTS_DATA_QUERY
+from constants.plsql_constants import (
+    INSERT_BULK_POSTS_DATA_QUERY,
+    CHECK_EXISTING_POSTS_QUERY,
+)
 from utils.faktory import initialize_producer
 from modal.posts import Posts
 import datetime
@@ -30,9 +33,7 @@ class ThreadCrawler:
                 thread_numbers.add(thread["no"])
         return thread_numbers
 
-    def get_threads_from_board(
-        self, board: str, old_threads: List = []
-    ) -> List[Dict[str, Any]]:
+    def get_threads_from_board(self, board: str) -> List[Dict[str, Any]]:
         """
         Fetch all threads from a specific board.
 
@@ -43,8 +44,6 @@ class ThreadCrawler:
             List of thread dictionaries, empty list if failed
         """
         logger.info(f"Fetching threads from {board} board...")
-
-        logger.debug(f"Total Recieved old threads {len(old_threads)}")
 
         # test
         # threads_data = '[{"page":1,"threads":[{"no":503281217,"last_modified":1745613336,"replies":1},{"no":519496220,"last_modified":1761097906,"replies":3},{"no":519492417,"last_modified":1761097904,"replies":203},{"no":519486692,"last_modified":1761097903,"replies":22},{"no":519490182,"last_modified":1761097902,"replies":37},{"no":519485421,"last_modified":1761097902,"replies":260},{"no":519494250,"last_modified":1761097900,"replies":10}]}]'
@@ -58,26 +57,20 @@ class ThreadCrawler:
             logger.error(f"No threads found from /{board}/ board")
             return []
 
-        all_threads = self.threads_json_to_thread_number(threads_data)
-
-        new_threads = list(all_threads.difference(set(old_threads)))
-
-        logger.info(f"Total threads found in /{board}/: {len(new_threads)}")
-
-        old_threads = old_threads + new_threads
+        all_threads = list(self.threads_json_to_thread_number(threads_data))
 
         initialize_producer(
             queue=f"enqueue-crawl-thread-{board}",
             jobtype=f"enqueue_crawl_thread_{board}",
             delayedTimer=datetime.timedelta(seconds=15),
-            args=[board, new_threads],
+            args=[board, all_threads],
         )
 
         initialize_producer(
             queue=f"enqueue-crawl-listing-{board}",
             jobtype=f"enqueue_crawl_listing_{board}",
             delayedTimer=datetime.timedelta(minutes=5),
-            args=[board, old_threads],
+            args=[board],
         )
 
     def fetch_thread_posts(self, board_name, thread_ids):
@@ -133,9 +126,10 @@ class ThreadCrawler:
 
         return all_posts
 
-    def save_posts_to_database(self, posts: list):
+    def save_posts_to_database(self, board_name, posts: list):
         """
         Saves a list of Posts objects to the database using a bulk insert.
+        Checks for existing post_no's in the database and only inserts new ones.
         """
         if not posts:
             logger.info("No new posts to insert into the database.")
@@ -145,17 +139,50 @@ class ThreadCrawler:
 
         db_client = PLSQL()
 
-        post_records = [post.to_tuple() for post in posts]
+        # Get all post numbers from the posts list
+        post_nos = [post.get_post_number() for post in posts]
+
         logger.debug(
-            f"Preparing to insert {len(post_records)} posts into the database."
+            f"Checking which of {len(post_nos)} posts do not exist in database for board '{board_name}'."
         )
 
         try:
+            # Query returns only post numbers that DO NOT exist in the database
+            non_existing_posts = db_client.get_data_from(
+                CHECK_EXISTING_POSTS_QUERY, (post_nos, board_name)
+            )
+
+            # Extract the post_no values from the result (returns list of tuples)
+            non_existing_post_nos = set(row[0] for row in non_existing_posts)
+
+            logger.info(
+                f"Found {len(non_existing_post_nos)} new posts that need to be inserted."
+            )
+
+            if not non_existing_post_nos:
+                logger.info(
+                    "All posts already exist in database. No new posts to insert."
+                )
+                return
+
+            # Filter to only include posts that don't exist in the database
+            new_posts = [
+                post
+                for post in posts
+                if post.get_post_number() in non_existing_post_nos
+            ]
+
+            # Convert new posts to tuples for bulk insert
+            post_records = [post.to_tuple() for post in new_posts]
+            logger.info(
+                f"Preparing to insert {len(post_records)} new posts into the database."
+            )
+
             db_client.insert_bulk_data_into_db(
                 INSERT_BULK_POSTS_DATA_QUERY, post_records
             )
             logger.info(
-                f"Successfully inserted {len(post_records)} posts into the database."
+                f"Successfully inserted {len(post_records)} new posts into the database."
             )
         except Exception as e:
             logger.error(f"Error inserting posts into the database: {e}")
@@ -177,7 +204,7 @@ class ThreadCrawler:
         posts = self.fetch_thread_posts(board_name, thread_ids)
         if posts:
             logger.info(f"Fetched {len(posts)} posts from {len(thread_ids)} threads.")
-            self.save_posts_to_database(posts)
+            self.save_posts_to_database(board_name, posts)
         else:
             logger.warning(f"No posts retrieved for board '{board_name}'.")
 
