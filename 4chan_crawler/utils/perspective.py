@@ -25,6 +25,8 @@ def clean_html(html_text: str) -> str:
 
     # 2. Unescape HTML entities like &gt; and &#039;
     cleaned = html.unescape(no_tags)
+    cleaned = re.sub(r'^>>?\d+', '', cleaned)
+    cleaned = re.sub(r'^\d+', '', cleaned)
     logger.debug(f"Cleaned HTML Tags {cleaned}")
     logger.debug(f"Cleaned HTML: {len(html_text or '')} chars -> {len(cleaned)} chars")
     return cleaned
@@ -80,7 +82,7 @@ def score_text(text: str) -> dict:
     # text = (text or "")[:2800]
     if len(text) == 0:
         logger.warning("Empty text provided, returning empty scores")
-        return {}
+        return None
 
     payload = {
         "comment": {"text": text},
@@ -95,7 +97,7 @@ def score_text(text: str) -> dict:
 
     # --- tiny retry loop for transient failures ---
     data = None
-    for attempt in range(3):
+    for attempt in range(4):
         try:
             logger.info(f"Attempt {attempt + 1}/3: Calling Perspective API")
             client = ChanClient(PERSPECTIVE_ENDPOINT)
@@ -104,11 +106,16 @@ def score_text(text: str) -> dict:
             )
 
             if response is ERROR429:
+                logger.warning("Perspective API returned 429 to many requests")
                 if attempt == 1:
-                    sleep_s = 1.1**attempt
+                    sleep_s = 1.5**attempt
                     logger.warning(f"Retrying in {sleep_s:.1f}s")
                     time.sleep(sleep_s)
-                logger.warning("Perspective API returned 429 to many requests")
+                if attempt == 2:
+                    sleep_s = 2**attempt
+                    logger.warning(f"Retrying in {sleep_s:.1f}s")
+                    time.sleep(sleep_s)
+                logger.info(f"API Key Changed: {current_api_key}")
                 if current_api_key == api_key1:
                     current_api_key = api_key2
                     url = url = f"?key={api_key2}"

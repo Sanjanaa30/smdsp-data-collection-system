@@ -31,6 +31,21 @@ INSERT INTO post_toxicity (
   toxicity, severe_toxicity, identity_attack, insult, threat,
   profanity, sexually_explicit, flirtation, obscene, spam, unsubstantial
 ) VALUES %s
+ON CONFLICT (board_name, post_no) DO UPDATE SET
+  comment = EXCLUDED.comment,
+  language = EXCLUDED.language,
+  toxicity = EXCLUDED.toxicity,
+  severe_toxicity = EXCLUDED.severe_toxicity,
+  identity_attack = EXCLUDED.identity_attack,
+  insult = EXCLUDED.insult,
+  threat = EXCLUDED.threat,
+  profanity = EXCLUDED.profanity,
+  sexually_explicit = EXCLUDED.sexually_explicit,
+  flirtation = EXCLUDED.flirtation,
+  obscene = EXCLUDED.obscene,
+  spam = EXCLUDED.spam,
+  unsubstantial = EXCLUDED.unsubstantial,
+  scored_at = now()
 """
 
 

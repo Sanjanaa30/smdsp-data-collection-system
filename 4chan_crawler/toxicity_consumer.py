@@ -63,10 +63,6 @@ def score_post_toxicity_handler(posts: list):
 
             toxicity.set_comment(trim_to_20kb(clean_html(toxicity.get_comment())))
 
-            logger.debug(
-                f"Text length after cleaning: {len(toxicity.get_comment())} characters"
-            )
-
             scores = score_text(toxicity.get_comment())
             if scores is None:
                 logger.warning(
@@ -99,6 +95,6 @@ def score_post_toxicity_handler(posts: list):
 
     if scored_toxicity_objects:
         store_toxicity_into_db(scored_toxicity_objects)
-        logger.info("✅ Completed Calculating & Inserting Toxicity Scores to DB")
+        logger.info(f"✅ Completed Calculating & Inserting Toxicity Scores for {len(posts)} posts to DB")
     else:
         logger.warning("No toxicity scores to insert into database")

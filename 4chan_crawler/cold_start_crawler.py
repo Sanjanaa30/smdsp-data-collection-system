@@ -69,6 +69,7 @@ class ColdStartCrawler:
                 delayedTimer=datetime.timedelta(seconds=60),
                 args=[
                     board_name.lower(),
+                    [],
                     self.score_toxicity,
                 ],
             )

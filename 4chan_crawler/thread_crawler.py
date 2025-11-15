@@ -25,17 +25,45 @@ class ThreadCrawler:
         """Initialize the thread crawler with a ChanClient instance."""
         self.client = ChanClient(FOURCHAN_BASE_URL)
 
-    def threads_json_to_thread_number(self, thread_list) -> set:
-        thread_numbers = set()
+    def threads_json_to_thread_number(self, thread_list, old_threads):
+        all_threads = set()
+
+        # Convert old_threads list of dicts to a single dict for easy lookup
+        old_threads_dict = {}
+        for thread_dict in old_threads:
+            old_threads_dict.update(thread_dict)
+
         for page in thread_list:
             # print(f"{page['page']}")
             for thread in page["threads"]:
-                # logger.debug(f"{thread['no']}")
-                thread_numbers.add(thread["no"])
-        return thread_numbers
+                thread_no = thread["no"]
+                last_modified = thread["last_modified"]
+
+                # Check if thread exists in old_threads and if last_modified has changed
+                if thread_no in old_threads_dict:
+                    if old_threads_dict[thread_no] == last_modified:
+                        # Thread hasn't changed, skip it
+                        logger.debug(
+                            f"Skipping thread {thread_no} - no changes since last crawl"
+                        )
+                        continue
+                    else:
+                        logger.debug(
+                            f"Thread {thread_no} has been modified - adding to crawl queue"
+                        )
+
+                # Add thread to all_threads (either new or modified)
+                threads = {thread_no: last_modified}
+                all_threads.add(thread_no)
+                old_threads_dict.update(threads)
+
+        # Convert old_threads_dict back to list of individual dicts format
+        old_threads_list = [{k: v} for k, v in old_threads_dict.items()]
+        
+        return list(all_threads), old_threads_list
 
     def get_threads_from_board(
-        self, board: str, score_toxicity: bool = False
+        self, board: str, old_threads=[], score_toxicity: bool = False
     ) -> List[Dict[str, Any]]:
         """
         Fetch all threads from a specific board.
@@ -60,8 +88,10 @@ class ThreadCrawler:
             logger.error(f"No threads found from /{board}/ board")
             return []
 
-        all_threads = list(self.threads_json_to_thread_number(threads_data))
-
+        all_threads, old_threads = self.threads_json_to_thread_number(
+            threads_data, old_threads
+        )
+        logger.debug(f"Old Threads {old_threads}")
         initialize_producer(
             queue=f"enqueue-crawl-thread-{board}",
             jobtype=f"enqueue_crawl_thread_{board}",
@@ -73,7 +103,7 @@ class ThreadCrawler:
             queue=f"enqueue-crawl-listing-{board}",
             jobtype=f"enqueue_crawl_listing_{board}",
             delayedTimer=datetime.timedelta(minutes=5),
-            args=[board, score_toxicity],
+            args=[board, old_threads, score_toxicity],
         )
 
     def fetch_thread_posts(self, board_name, thread_ids):
@@ -216,7 +246,7 @@ class ThreadCrawler:
                 logger.info(f"Scoring toxicity for {board_name}")
                 delay = datetime.timedelta(seconds=30)
                 input_toxicity = [
-                    post.get_attributes_for_toxicity()  
+                    post.get_attributes_for_toxicity()
                     for post in new_posts
                     if post.comment
                 ]
@@ -224,7 +254,7 @@ class ThreadCrawler:
                     queue=f"{TOX_QUEUE}-{board_name.lower()}",
                     jobtype=f"{TOX_JOBTYPE}_{board_name.lower()}",
                     delayedTimer=delay,
-                    args=[input_toxicity], 
+                    args=[input_toxicity],
                 )
                 logger.debug(
                     f"Scheduled collect toxicuty job with a total payload: {len(input_toxicity)}"
