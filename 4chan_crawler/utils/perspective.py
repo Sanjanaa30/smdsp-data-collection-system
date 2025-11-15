@@ -9,11 +9,12 @@ import requests
 from chan_client import ChanClient
 from constants.api_constants import PERSPECTIVE_ENDPOINT
 from constants.constants import DEFAULT_LANG_ENV, PERSPECTIVE_ATTRS
+from constants.errors_constants import ERROR429
 from dotenv import load_dotenv
 from utils.logger import Logger
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
-logger = Logger("Perspective").get_logger()
+logger = Logger("Perspective", "toxicity_consumer.log").get_logger()
 
 _TAG = re.compile(r"<[^>]+>")
 
@@ -24,7 +25,8 @@ def clean_html(html_text: str) -> str:
 
     # 2. Unescape HTML entities like &gt; and &#039;
     cleaned = html.unescape(no_tags)
-    logger.debug(f"Cleaned HTML: {len(html or '')} chars -> {len(cleaned)} chars")
+    logger.debug(f"Cleaned HTML Tags {cleaned}")
+    logger.debug(f"Cleaned HTML: {len(html_text or '')} chars -> {len(cleaned)} chars")
     return cleaned
 
 
@@ -60,13 +62,15 @@ def score_text(text: str) -> dict:
     Retries a couple times on transient errors (429/5xx).
     """
     logger.info("Starting toxicity scoring for text")
-
-    text = trim_to_20kb(clean_html(text))
     
-    logger.debug(f"Text length after cleaning: {len(text)} characters")
 
-    api_key = os.getenv("PERSPECTIVE_API_KEY")
-    if not api_key:
+    # text = trim_to_20kb(clean_html(text))
+
+    
+
+    api_key1 = os.getenv("PERSPECTIVE_API_KEY_ONE")
+    api_key2 = os.getenv("PERSPECTIVE_API_KEY_TWO")
+    if not api_key1:
         logger.error("PERSPECTIVE_API_KEY not set in environment variables")
         raise RuntimeError("PERSPECTIVE_API_KEY not set")
 
@@ -86,9 +90,11 @@ def score_text(text: str) -> dict:
     }
     logger.debug(f"Requesting {len(PERSPECTIVE_ATTRS)} attributes from Perspective API")
 
-    url = f"?key={api_key}"
+    url = f"?key={api_key1}"
+    current_api_key = api_key1
 
     # --- tiny retry loop for transient failures ---
+    data = None
     for attempt in range(3):
         try:
             logger.info(f"Attempt {attempt + 1}/3: Calling Perspective API")
@@ -96,6 +102,23 @@ def score_text(text: str) -> dict:
             response = client.make_post_request(
                 endpoint=url, payload=payload, timeout=20
             )
+
+            if response is ERROR429:
+                if attempt == 1:
+                    sleep_s = 1.1**attempt
+                    logger.warning(f"Retrying in {sleep_s:.1f}s")
+                    time.sleep(sleep_s)
+                logger.warning("Perspective API returned 429 to many requests")
+                if current_api_key == api_key1:
+                    current_api_key = api_key2
+                    url = url = f"?key={api_key2}"
+                    continue
+                else:
+                    current_api_key = api_key1
+                    url = url = f"?key={api_key1}"
+                    continue
+            if response is None:
+                return None
             logger.info("Successfully received response from Perspective API")
 
             data = response.get("attributeScores", {})
@@ -127,8 +150,17 @@ def score_text(text: str) -> dict:
                 continue
             raise
 
+    if data is None:
+        logger.error(
+            "Failed to get valid response from Perspective API after all retries"
+        )
+        return None
+
     def v(key: str):
-        value = data.get(key, {}).get("summaryScore", {}).get("value")
+        try:
+            value = data.get(key, {}).get("summaryScore", {}).get("value")
+        except Exception as e:
+            logger.warning(f"Error getting attribute {e}")
         # if value is not None:
         #     logger.debug(f"  {key}: {value:.4f}")
         return value

@@ -60,7 +60,7 @@ class CrawlerConsumer:
     def start_collect_consumer(self):
         """Start Faktory consumer for scoring posts."""
         logger.info(
-            f"🚀 Starting Faktory consumer for scoring posts: {self.collect_posts}"
+            f"🚀 Starting Faktory consumer for collecting posts: {self.collect_posts}"
         )
         queue_thread_listing = [
             f"enqueue-crawl-listing-{boards_name.lower()}"
@@ -88,16 +88,27 @@ class CrawlerConsumer:
             with Client(
                 faktory_url=faktory_server_url, role=FAKTORY_CONSUMER_ROLE
             ) as client:
+                final_queue = ["default"] + queue_thread_listing + queue_thread_crawling
+                toxicity_queue, toxicity_job_type = [], []
+                if self.score_toxicity:
+                    toxicity_queue, toxicity_job_type = (
+                        self.start_score_toxicity_consumer()
+                    )
+                    final_queue = final_queue + toxicity_queue
                 consumer = Consumer(
                     client=client,
-                    queues=["default"] + queue_thread_listing + queue_thread_crawling,
+                    queues=final_queue,
                     concurrency=concurrency,
                 )
                 for jobtype in jobtypes_thread_listing:
                     consumer.register(jobtype, thread_crawler.get_threads_from_board)
                 for jobtype in jobtypes_thread_crawling:
                     consumer.register(jobtype, thread_crawler.collect_and_store_posts)
+                if self.score_toxicity:
+                    for jobtype in toxicity_job_type:
+                        consumer.register(jobtype, score_post_toxicity_handler)
                 consumer.run()
+            logger.info("Completed Initializing Consumer")
         except Exception as e:
             logger.debug(f"Error connecting to Faktory server: {e}")
 
@@ -112,18 +123,16 @@ class CrawlerConsumer:
         toxicity_job = [
             f"{TOX_JOBTYPE}_{boards_name.lower()}" for boards_name in self.collect_posts
         ]
-        initialize_consumer(
-            toxicity_queue, toxicity_job, score_post_toxicity_handler, 2
-        )
-        logger.info(
-            f"🚀 Completed Starting Faktory consumer for scoring toxicity: {self.score_toxicity}"
-        )
+
+        return toxicity_queue, toxicity_job
 
     def run(self):
         """Run the appropriate Faktory consumer based on CLI arguments."""
         # Validate that score_toxicity requires collect_posts
         if self.score_toxicity and not self.collect_posts:
-            error_msg = "❌ Error: --score-toxicity can only be used with --collect-posts"
+            error_msg = (
+                "❌ Error: --score-toxicity can only be used with --collect-posts"
+            )
             logger.error(error_msg)
             print(error_msg)
             return
@@ -133,7 +142,7 @@ class CrawlerConsumer:
 
         if self.collect_posts:
             self.start_collect_consumer()
-
+            logger.debug(f"Value of score_toxicity {self.score_toxicity}")
             if self.score_toxicity:
                 self.start_score_toxicity_consumer()
 

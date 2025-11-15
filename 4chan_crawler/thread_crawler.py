@@ -5,11 +5,10 @@ from chan_client import ChanClient
 from constants.api_constants import DOT_JSON, FOURCHAN_BASE_URL, THREAD, THREADS
 from constants.constants import CHAN_CRAWLER, POSTS_FIELDS, TOX_JOBTYPE, TOX_QUEUE
 from constants.plsql_constants import (
-    INSERT_BULK_POSTS_DATA_QUERY,
     CHECK_EXISTING_POSTS_QUERY,
+    INSERT_BULK_POSTS_DATA_QUERY,
 )
 from modal.posts import Posts
-from toxicity import enqueue_toxicity
 from utils.faktory import initialize_producer
 from utils.logger import Logger
 
@@ -188,19 +187,7 @@ class ThreadCrawler:
             logger.info(
                 f"Successfully inserted {len(post_records)} new posts into the database."
             )
-
-            # Enqueue posts for toxicity analysis
-            for post in posts:
-                try:
-                    enqueue_toxicity(
-                        board_name=post.board_name,
-                        post_no=post.post_no,
-                        delay_seconds=5,
-                    )
-                except Exception as e:
-                    logger.error(
-                        f"Error enqueuing post #{post.post_no} for toxicity analysis: {e}"
-                    )
+            return new_posts
         except Exception as e:
             logger.error(f"Error inserting posts into the database: {e}")
         finally:
@@ -223,19 +210,21 @@ class ThreadCrawler:
         posts = self.fetch_thread_posts(board_name, thread_ids)
         if posts:
             logger.info(f"Fetched {len(posts)} posts from {len(thread_ids)} threads.")
-            self.save_posts_to_database(board_name, posts)
+            new_posts = self.save_posts_to_database(board_name, posts)
 
             if score_toxicity:
                 logger.info(f"Scoring toxicity for {board_name}")
                 delay = datetime.timedelta(seconds=30)
                 input_toxicity = [
-                    post.get_attributes_for_toxicity() for post in posts if post.comment
+                    post.get_attributes_for_toxicity()  
+                    for post in new_posts
+                    if post.comment
                 ]
                 initialize_producer(
-                    queue=f"{TOX_QUEUE}-{board_name.lower()}",  # <— constants
-                    jobtype=f"{TOX_JOBTYPE}_{board_name.lower()}",  # <— constants
+                    queue=f"{TOX_QUEUE}-{board_name.lower()}",
+                    jobtype=f"{TOX_JOBTYPE}_{board_name.lower()}",
                     delayedTimer=delay,
-                    args=[input_toxicity],
+                    args=[input_toxicity], 
                 )
                 logger.debug(
                     f"Scheduled collect toxicuty job with a total payload: {len(input_toxicity)}"

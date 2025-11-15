@@ -13,6 +13,12 @@ CREATE TABLE IF NOT EXISTS post_toxicity (
   identity_attack  REAL CHECK (identity_attack BETWEEN 0 AND 1), -- identity attack score
   insult           REAL CHECK (insult BETWEEN 0 AND 1),          -- insult score
   threat           REAL CHECK (threat BETWEEN 0 AND 1),          -- threat score
+  profanity        REAL CHECK (profanity BETWEEN 0 AND 1),       -- profanity score
+  sexually_explicit REAL CHECK (sexually_explicit BETWEEN 0 AND 1), -- sexually explicit score
+  flirtation       REAL CHECK (flirtation BETWEEN 0 AND 1),      -- flirtation score
+  obscene          REAL CHECK (obscene BETWEEN 0 AND 1),         -- obscene score
+  spam             REAL CHECK (spam BETWEEN 0 AND 1),            -- spam score
+  unsubstantial    REAL CHECK (unsubstantial BETWEEN 0 AND 1),   -- unsubstantial score
   
   PRIMARY KEY (board_name, post_no)
 );

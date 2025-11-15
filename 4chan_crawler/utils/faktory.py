@@ -55,26 +55,31 @@ def initialize_producer(
     logger.debug("queue: %s, jobtype: %s", queue, jobtype)
     faktory_server_url = os.getenv(FAKTORY_SERVER_URL)
     logger.debug(f"Faktory server URL: {faktory_server_url}")
-    with Client(faktory_url=faktory_server_url, role=FAKTORY_PRODUCER_ROLE) as client:
+    logger.debug(f"Args for Job: {args}")
+    try:
+        with Client(faktory_url=faktory_server_url, role=FAKTORY_PRODUCER_ROLE) as client:
 
-            # NEW: default to zero delay if None
-        if delayedTimer is None:
-            delayedTimer = datetime.timedelta(seconds=0)
+                # NEW: default to zero delay if None
+            if delayedTimer is None:
+                delayedTimer = datetime.timedelta(seconds=0)
 
-        run_at = datetime.datetime.now(datetime.UTC) + delayedTimer
-        run_at = run_at.isoformat()[:-7] + "Z"
-        # logger.info(f"run_at = {run_at}")
-        producer = Producer(client=client)
-        job = Job(
-            jobtype=jobtype,
-            queue=queue,
-            args=args or [],
-            at=str(run_at),
+            run_at = datetime.datetime.now(datetime.UTC) + delayedTimer
+            run_at = run_at.isoformat()[:-7] + "Z"
+            # logger.info(f"run_at = {run_at}")
+            producer = Producer(client=client)
+            job = Job(
+                jobtype=jobtype,
+                queue=queue,
+                args=args or [],
+                at=str(run_at),
+            )
+            producer.push(job)
+        logger.info(
+            "Scheduled job '%s' on queue '%s' to run at %s",
+            jobtype,
+            queue,
+            run_at,
         )
-        producer.push(job)
-    logger.info(
-        "Scheduled job '%s' on queue '%s' to run at %s",
-        jobtype,
-        queue,
-        run_at,
-    )
+    except Exception as e:
+        logger.error(f"Error Initialing faktory queue {queue}")
+        logger.error(f"{e}")
