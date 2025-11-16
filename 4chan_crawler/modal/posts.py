@@ -49,7 +49,7 @@ class Posts:
         return {
             "post_no": self.post_no,
             "board_name": self.board_name,
-            "comment": self.comment
+            "comment": self.comment,
         }
 
     # def is_comment_empty(self):

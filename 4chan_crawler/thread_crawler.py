@@ -59,7 +59,7 @@ class ThreadCrawler:
 
         # Convert old_threads_dict back to list of individual dicts format
         old_threads_list = [{k: v} for k, v in old_threads_dict.items()]
-        
+
         return list(all_threads), old_threads_list
 
     def get_threads_from_board(

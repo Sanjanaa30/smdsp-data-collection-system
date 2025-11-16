@@ -1,16 +1,17 @@
 import datetime
 import os
-from typing import Callable, Optional
 from pathlib import Path
-from dotenv import load_dotenv
-from utils.logger import Logger
-from pyfaktory import Client, Consumer, Job, Producer
+from typing import Callable, Optional
+
 from constants.constants import (
     CHAN_CRAWLER,
-    FAKTORY_SERVER_URL,
     FAKTORY_CONSUMER_ROLE,
     FAKTORY_PRODUCER_ROLE,
+    FAKTORY_SERVER_URL,
 )
+from dotenv import load_dotenv
+from pyfaktory import Client, Consumer, Job, Producer
+from utils.logger import Logger
 
 # Load environment from the package .env to ensure consistent behavior
 # regardless of current working directory (aligns with plsql.py)
@@ -57,9 +58,10 @@ def initialize_producer(
     logger.debug(f"Faktory server URL: {faktory_server_url}")
     logger.debug(f"Args for Job: {args}")
     try:
-        with Client(faktory_url=faktory_server_url, role=FAKTORY_PRODUCER_ROLE) as client:
-
-                # NEW: default to zero delay if None
+        with Client(
+            faktory_url=faktory_server_url, role=FAKTORY_PRODUCER_ROLE
+        ) as client:
+            # NEW: default to zero delay if None
             if delayedTimer is None:
                 delayedTimer = datetime.timedelta(seconds=0)
 

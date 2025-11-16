@@ -7,4 +7,6 @@ DOT_JSON = ".json"
 CATALOG_JSON = "catalog.json"
 
 # Perspective API endpoint
-PERSPECTIVE_ENDPOINT = "https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze"
+PERSPECTIVE_ENDPOINT = (
+    "https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze"
+)

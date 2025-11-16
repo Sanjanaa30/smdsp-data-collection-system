@@ -58,3 +58,23 @@ FROM posts
 WHERE board_name = %s AND post_no = %s
 ORDER BY board_name, post_no, created_at DESC;
 """
+
+
+SELECT_UNSCORED_POSTS = """
+WITH latest AS (
+  SELECT DISTINCT ON (board_name, post_no)
+         board_name,
+         post_no,
+         comment
+  FROM posts
+  where board_name = %s
+  ORDER BY board_name, post_no, created_at DESC
+)
+SELECT l.board_name, l.post_no, l.comment
+FROM latest l
+LEFT JOIN post_toxicity s
+  ON s.board_name = l.board_name
+ AND s.post_no = l.post_no
+WHERE s.post_no IS NULL
+limit %s
+"""

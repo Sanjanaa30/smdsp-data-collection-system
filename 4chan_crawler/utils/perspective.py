@@ -25,8 +25,8 @@ def clean_html(html_text: str) -> str:
 
     # 2. Unescape HTML entities like &gt; and &#039;
     cleaned = html.unescape(no_tags)
-    cleaned = re.sub(r'^>>?\d+', '', cleaned)
-    cleaned = re.sub(r'^\d+', '', cleaned)
+    cleaned = re.sub(r"^>>?\d+", "", cleaned)
+    cleaned = re.sub(r"^\d+", "", cleaned)
     logger.debug(f"Cleaned HTML Tags {cleaned}")
     logger.debug(f"Cleaned HTML: {len(html_text or '')} chars -> {len(cleaned)} chars")
     return cleaned
@@ -64,11 +64,8 @@ def score_text(text: str) -> dict:
     Retries a couple times on transient errors (429/5xx).
     """
     logger.info("Starting toxicity scoring for text")
-    
 
     # text = trim_to_20kb(clean_html(text))
-
-    
 
     api_key1 = os.getenv("PERSPECTIVE_API_KEY_ONE")
     api_key2 = os.getenv("PERSPECTIVE_API_KEY_TWO")

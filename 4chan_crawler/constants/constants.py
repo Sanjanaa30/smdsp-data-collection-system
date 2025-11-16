@@ -37,17 +37,17 @@ TOX_JOBTYPE = "toxicity_job"
 # Complete list of all available attributes from Google Perspective API
 # Production attributes (supported in all languages):
 PERSPECTIVE_ATTRS = [
-    "TOXICITY",              # A rude, disrespectful, or unreasonable comment
-    "SEVERE_TOXICITY",       # A very hateful, aggressive, disrespectful comment
-    "IDENTITY_ATTACK",       # Negative or hateful comments targeting identity/demographic
-    "INSULT",                # Insulting, inflammatory, or negative comment
-    "PROFANITY",             # Swear words, curse words, or other obscene language
-    "THREAT",                # Describes an intention to inflict pain, injury, or violence
-    "SEXUALLY_EXPLICIT",     # Contains references to sexual acts, body parts, or other lewd content
-    "FLIRTATION",            # Pickup lines, complimenting appearance, subtle sexual references
-    "OBSCENE",               # Obscene or vulgar language
-    "SPAM",                  # Irrelevant or unsolicited message
-    "UNSUBSTANTIAL",         # Trivial or short comments
+    "TOXICITY",  # A rude, disrespectful, or unreasonable comment
+    "SEVERE_TOXICITY",  # A very hateful, aggressive, disrespectful comment
+    "IDENTITY_ATTACK",  # Negative or hateful comments targeting identity/demographic
+    "INSULT",  # Insulting, inflammatory, or negative comment
+    "PROFANITY",  # Swear words, curse words, or other obscene language
+    "THREAT",  # Describes an intention to inflict pain, injury, or violence
+    "SEXUALLY_EXPLICIT",  # Contains references to sexual acts, body parts, or other lewd content
+    "FLIRTATION",  # Pickup lines, complimenting appearance, subtle sexual references
+    "OBSCENE",  # Obscene or vulgar language
+    "SPAM",  # Irrelevant or unsolicited message
+    "UNSUBSTANTIAL",  # Trivial or short comments
 ]
 
 # Env var name for default language (matches your .env)

@@ -1,9 +1,8 @@
 # toxicity_consumer.py
-from utils.logger import Logger
-from utils.perspective import score_text, clean_html, trim_to_20kb
 from constants.plsql_constants import INSERT_BULK_TOXICITY_DATA_QUERY
 from modal.toxicity import Toxicity
-
+from utils.logger import Logger
+from utils.perspective import clean_html, score_text, trim_to_20kb
 
 logger = Logger("toxicity_consumer", "toxicity_consumer.log").get_logger()
 
@@ -49,7 +48,7 @@ def score_post_toxicity_handler(posts: list):
     for toxicity_dict in posts:
         count = count + 1
         toxicity = Toxicity(**toxicity_dict)
-        
+
         logger.info(
             f"🆙 Scoring toxicity for post_no = {toxicity.get_post_number()} board_name = {toxicity.get_board_name()}"
         )
@@ -95,6 +94,8 @@ def score_post_toxicity_handler(posts: list):
 
     if scored_toxicity_objects:
         store_toxicity_into_db(scored_toxicity_objects)
-        logger.info(f"✅ Completed Calculating & Inserting Toxicity Scores for {len(posts)} posts to DB")
+        logger.info(
+            f"✅ Completed Calculating & Inserting Toxicity Scores for {len(posts)} posts to DB"
+        )
     else:
         logger.warning("No toxicity scores to insert into database")
