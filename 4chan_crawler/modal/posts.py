@@ -46,8 +46,15 @@ class Posts:
 
     def get_attributes_for_toxicity(self):
         """Returns the attributes need for toxicity"""
+        title_or_comment = ""
+        if self.resto == 0:
+            title_or_comment = "POST"
+        else:
+            title_or_comment = "COMMENT"
+
         return {
             "post_no": self.post_no,
+            "titleOrComment": title_or_comment,
             "board_name": self.board_name,
             "comment": self.comment,
         }

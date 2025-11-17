@@ -26,12 +26,13 @@ WHERE NOT EXISTS (
 """
 
 INSERT_BULK_TOXICITY_DATA_QUERY = """
-INSERT INTO post_toxicity (
-  board_name, post_no, comment, language,
+INSERT INTO toxicity (
+  board_name, titleOrComment, post_no, comment, language,
   toxicity, severe_toxicity, identity_attack, insult, threat,
   profanity, sexually_explicit, flirtation, obscene, spam, unsubstantial
 ) VALUES %s
 ON CONFLICT (board_name, post_no) DO UPDATE SET
+  titleOrComment = EXCLUDED.titleOrComment,
   comment = EXCLUDED.comment,
   language = EXCLUDED.language,
   toxicity = EXCLUDED.toxicity,
@@ -72,7 +73,7 @@ WITH latest AS (
 )
 SELECT l.board_name, l.post_no, l.comment
 FROM latest l
-LEFT JOIN post_toxicity s
+LEFT JOIN toxicity s
   ON s.board_name = l.board_name
  AND s.post_no = l.post_no
 WHERE s.post_no IS NULL

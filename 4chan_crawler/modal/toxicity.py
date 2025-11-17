@@ -1,6 +1,9 @@
 class Toxicity:
-    def __init__(self, post_no: int, board_name: str, comment: str):
+    def __init__(
+        self, post_no: int, titleOrComment: str, board_name: str, comment: str
+    ):
         self.post_no = post_no
+        self.titleOrComment = titleOrComment
         self.board_name = board_name
         self.comment = comment
         self.language = "en"
@@ -55,6 +58,7 @@ class Toxicity:
         """Convert to tuple for database insertion"""
         return (
             self.board_name,
+            self.titleOrComment,
             self.post_no,
             self.comment,
             self.language,

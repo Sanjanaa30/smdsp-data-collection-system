@@ -1,8 +1,9 @@
 -- Add migration script here
 -- migrations/20251109000918_add_toxicity_column.sql
 
-CREATE TABLE IF NOT EXISTS post_toxicity (
+CREATE TABLE IF NOT EXISTS toxicity (
   board_name       TEXT    NOT NULL,         -- e.g., 'pol', 'int'
+  titleOrComment   TEXT    NOT NULL, 
   post_no          BIGINT  NOT NULL,         -- 4chan post ID (OP or reply)
   comment          TEXT    NOT NULL,         -- Post comment/content (HTML formatted)
   scored_at        TIMESTAMPTZ NOT NULL DEFAULT now(), -- timestamp when the toxicity scores were computed
