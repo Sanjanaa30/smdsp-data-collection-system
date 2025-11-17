@@ -7,6 +7,7 @@ Commands:
     --update-new-subreddit      Update all newly discovered or unprocessed subreddit.
     --collect-posts [names]     Collect posts for one or more specified subreddit.
     --collect-comments [names]  Collect comments for one or more specified subreddit.
+    --score-toxicity         Enable toxicity scoring when collecting posts.
     --help                      Display information about available commands.
 """
 
@@ -27,6 +28,7 @@ class ColdStartCrawler:
         update_new_subreddit (bool): Flag indicating whether to update new subreddit.
         collect_posts (list[str] | None): List of subreddit names to collect posts for.
         collect_comments (list[str] | None): List of subreddit names to collect comments for.
+        score_toxicity    Enable toxicity scoring when collecting posts.
     """
 
     def __init__(
@@ -34,10 +36,12 @@ class ColdStartCrawler:
         update_new_subreddit: bool = False,
         collect_posts: list[str] | None = None,
         collect_comments: list[str] | None = None,
+        score_toxicity: bool = False,
     ):
         self.update_new_subreddit = update_new_subreddit
         self.collect_posts = collect_posts
         self.collect_comments = collect_comments
+        self.score_toxicity = score_toxicity
 
     def update_subreddits(self):
         """Update all newly discovered Subreddit."""
@@ -65,7 +69,7 @@ class ColdStartCrawler:
                 jobtype=f"enqueue_crawl_{subreddit_name.lower()}",
                 queue=f"enqueue-crawl-{subreddit_name.lower()}",
                 delayedTimer=datetime.timedelta(seconds=60),
-                args=[subreddit_name.lower()],
+                args=[subreddit_name.lower(), self.score_toxicity],
             )
 
         logger.info(
@@ -88,7 +92,7 @@ class ColdStartCrawler:
                 queue=f"enqueue-crawl-comments-{subreddit_name.strip().lower()}",
                 jobtype=f"enqueue_crawl_comments_{subreddit_name.strip().lower()}",
                 delayedTimer=datetime.timedelta(seconds=60),
-                args=[subreddit_name.lower()],
+                args=[subreddit_name.lower(), self.score_toxicity],
             )
 
         logger.info(
@@ -132,6 +136,11 @@ def parse_arguments():
         help="Collect comments for one or more specified Subreddit.",
     )
 
+    parser.add_argument(
+        "--score-toxicity",
+        action="store_true",
+        help="Enable toxicity scoring when collecting posts.",
+    )
     return parser.parse_args()
 
 
@@ -142,6 +151,7 @@ if __name__ == "__main__":
         update_new_subreddit=args.update_new_subreddit,
         collect_posts=args.collect_posts,
         collect_comments=args.collect_comments,
+        score_toxicity=args.score_toxicity,
     )
 
     crawler.run()

@@ -1,7 +1,14 @@
 import time
 from typing import List, Optional
 from reddit_client import RedditClient
-from constants.constants import REDDIT_CRAWLER, COMMENT_FIELDS, COMMENT_DETAILS_FIELDS
+from constants.constants import (
+    REDDIT_CRAWLER,
+    COMMENT_FIELDS,
+    COMMENT_DETAILS_FIELDS,
+    TOX_QUEUE,
+    TOX_JOBTYPE,
+)
+from constants.api_constants import REDDIT_BASE_URL
 from modal.comment import Comment, CommentDetails
 from utils.logger import Logger
 from utils.plsql import PLSQL
@@ -13,7 +20,7 @@ from constants.plsql_constants import (
 import datetime
 
 logger = Logger(REDDIT_CRAWLER).get_logger()
-reddit_client = RedditClient()
+reddit_client = RedditClient(REDDIT_BASE_URL)
 
 
 def fetch_subreddit_comments(subreddit_name: str, after: Optional[str] = None):
@@ -84,23 +91,26 @@ def store_comments_in_db(comments: List[Comment]) -> None:
     existing_ids_rows = plsql.get_data_from(SELECT_UNIQUE_ID_COMMENTS)
     existing_ids = {row[0] for row in existing_ids_rows}
 
-    new_comment_rows = [
-        c.to_tuple()
-        for c in comments
-        if c.get_comment_id()
-        not in existing_ids  # method should mirror your Subreddit model
-    ]
+    new_comment_rows = []
+    input_toxicity = []
+    for c in comments:
+        if c.get_comment_id() not in existing_ids:
+            new_comment_rows.append(c.to_tuple())
+            input_toxicity.append(c.get_attributes_for_toxicity())
 
     if not new_comment_rows:
         logger.info("No New Comments Found")
     else:
         plsql.insert_bulk_data_into_db(BULK_INSERT_COMMENTS, new_comment_rows)
         logger.info(f"Inserted {len(new_comment_rows)} new comments")
+        return input_toxicity
 
     plsql.close_connection()
 
 
-def crawl_comments_for_subreddit(subreddit_name: str) -> None:
+def crawl_comments_for_subreddit(
+    subreddit_name: str, score_toxicity: bool = False
+) -> None:
     """
     Paginates through recent comments for each post_id,
     making requests and storing comments until no more pages are available.
@@ -117,7 +127,19 @@ def crawl_comments_for_subreddit(subreddit_name: str) -> None:
             logger.info(f"Fetching batch {i + 1}/2")
             comments, after = fetch_subreddit_comments(subreddit_name, after)
             if comments:
-                store_comments_in_db(comments)
+                input_toxicity = store_comments_in_db(comments)
+                if input_toxicity is None:
+                    logger.info("✅No Records Found Ending the Job")
+                    finished = True
+                    break
+                if score_toxicity and len(input_toxicity) > 0:
+                    delay = datetime.timedelta(seconds=30)
+                    initialize_producer(
+                        queue=f"{TOX_QUEUE}-comment-{subreddit_name.lower()}",
+                        jobtype=f"{TOX_JOBTYPE}_comment_{subreddit_name.lower()}",
+                        delayedTimer=delay,
+                        args=[input_toxicity],
+                    )
                 logger.info(f"Stored batch {i + 1} with {len(comments)} posts")
             else:
                 logger.warning(f"No data fetched on batch {i + 1}")

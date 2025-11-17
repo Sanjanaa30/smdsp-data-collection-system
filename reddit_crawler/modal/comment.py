@@ -136,6 +136,15 @@ class Comment:
             self.comment_details.to_json(),
         )
 
+    def get_attributes_for_toxicity(self):
+        """Returns the attributes need for toxicity"""
+        return {
+            "unique_name": self.comment_id,
+            "titleOrComment": "COMMENT",
+            "subreddit": self.subreddit,
+            "comment": self.body,
+        }
+
     def to_string(self):
         return f"{{Author: {self.author}\tSubreddit: {self.subreddit}\tCreated: {self.created_utc}\tBody: {self.body}}}"
 
