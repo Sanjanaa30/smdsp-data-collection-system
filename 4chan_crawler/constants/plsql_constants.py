@@ -66,12 +66,13 @@ WITH latest AS (
   SELECT DISTINCT ON (board_name, post_no)
          board_name,
          post_no,
+         resto,
          comment
   FROM posts
   where board_name = %s
   ORDER BY board_name, post_no, created_at DESC
 )
-SELECT l.board_name, l.post_no, l.comment
+SELECT l.board_name, l.post_no, l.resto, l.comment
 FROM latest l
 LEFT JOIN toxicity s
   ON s.board_name = l.board_name

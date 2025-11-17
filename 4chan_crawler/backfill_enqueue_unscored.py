@@ -15,12 +15,18 @@ def main(boards_name, limit: int = 5000):
         rows = db.get_data_from(SELECT_UNSCORED_POSTS, (boards_name, limit))
         logger.info("Backfill: found %d unscored posts", len(rows))
         post_data = []
-        for board_name, post_no, comment in rows:
+        for board_name, post_no, resto, comment in rows:
             if len(comment) < 1:
                 continue
+            title_or_comment = ""
+            if resto == 0:
+                title_or_comment = "POST"
+            else:
+                title_or_comment = "COMMENT"
             post_data.append(
                 {
                     "board_name": board_name,
+                    "titleOrComment": title_or_comment,
                     "post_no": int(post_no),
                     "comment": comment,
                 }
@@ -41,7 +47,7 @@ def main(boards_name, limit: int = 5000):
         )
         logger.info("Backfill: enqueued %d jobs", len(rows))
     except Exception as e:
-        logger.error(f"Error while scheduling job for back filling {e}")
+        logger.error(f"while scheduling job for back filling {e}")
     finally:
         db.close_connection()
 
