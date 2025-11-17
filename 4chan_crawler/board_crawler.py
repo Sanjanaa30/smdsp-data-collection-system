@@ -11,6 +11,7 @@ from constants.plsql_constants import (
 from constants.constants import (
     CHAN_CRAWLER,
 )
+from constants.api_constants import FOURCHAN_BASE_URL
 from dotenv import load_dotenv
 from utils.faktory import initialize_producer
 from utils.logger import Logger
@@ -29,7 +30,7 @@ class BoardCrawler:
 
     def __init__(self):
         """Initialize the board crawler with a ChanClient instance."""
-        self.client = ChanClient()
+        self.client = ChanClient(FOURCHAN_BASE_URL)
 
     def get_all_boards(self) -> List[Dict[str, Any]]:
         """

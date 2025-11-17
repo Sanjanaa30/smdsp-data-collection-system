@@ -153,3 +153,12 @@ class Post:
 
     def get_unique_identifer(self):
         return self.unique_name
+
+    def get_attributes_for_toxicity(self):
+        """Returns the attributes need for toxicity"""
+        return {
+            "unique_name": self.unique_name,
+            "titleOrComment": "POST",
+            "subreddit": self.subreddit,
+            "comment": self.title,
+        }

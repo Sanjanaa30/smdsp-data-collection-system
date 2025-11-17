@@ -5,7 +5,10 @@ from constants.constants import (
     REDDIT_CRAWLER,
     POST_FIELDS,
     POST_DETAILED_FIELDS,
+    TOX_QUEUE,
+    TOX_JOBTYPE,
 )
+from constants.api_constants import REDDIT_BASE_URL
 from modal.post import Post, DetailedPost
 from utils.logger import Logger
 from utils.plsql import PLSQL
@@ -15,7 +18,7 @@ import datetime
 
 # import json
 logger = Logger(REDDIT_CRAWLER).get_logger()
-reddit_client = RedditClient()
+reddit_client = RedditClient(REDDIT_BASE_URL)
 
 
 def fetch_posts(subreddit_name, after=None):
@@ -48,10 +51,12 @@ def fetch_posts(subreddit_name, after=None):
                 }
 
                 post_data_dict = {field: data.get(field, "") for field in POST_FIELDS}
-                
+
                 # Convert 'edited' field to boolean (Reddit returns false or timestamp)
                 edited_value = post_data_dict.get("edited", False)
-                post_data_dict["edited"] = bool(edited_value) and edited_value is not False
+                post_data_dict["edited"] = (
+                    bool(edited_value) and edited_value is not False
+                )
 
                 detailedPost = DetailedPost(**post_detailed_data_dict)
                 post_data_dict["post_details"] = detailedPost
@@ -78,20 +83,24 @@ def store_ps_in_db(posts: list):
     plsql = PLSQL()
     unique_posts_in_db = plsql.get_data_from(SELECT_UNIQUE_NAME_POSTS)
     unique_posts_values = {row[0] for row in unique_posts_in_db}
-    posts_data = [
-        post.to_tuple()
-        for post in posts
-        if post.get_unique_identifer() not in unique_posts_values
-    ]
+    posts_data = []
+    toxicity_data = []
+    for post in posts:
+        if post.get_unique_identifer() not in unique_posts_values:
+            posts_data.append(post.to_tuple())
+            toxicity_data.append(post.get_attributes_for_toxicity())
+
     # logger.debug(f"Inserting posts_data {posts_data}")
     if len(posts_data) == 0:
         logger.info("No New Posts Found")
+        return None
     else:
         plsql.insert_bulk_data_into_db(BULK_INSERT_POSTS, posts_data)
         plsql.close_connection()
+        return toxicity_data
 
 
-def get_posts(subreddit_name):
+def get_posts(subreddit_name, score_toxicity: bool = False):
     """
     Fetches data 4 times, waiting 15 seconds between requests,
     paginating through the results and storing each batch in DB.
@@ -105,8 +114,20 @@ def get_posts(subreddit_name):
         for i in range(2):
             logger.info(f"Fetching batch {i + 1}/2")
             posts, after = fetch_posts(subreddit_name, after)
-            if posts:
-                store_ps_in_db(posts)
+            if posts is not None:
+                delay = datetime.timedelta(seconds=30)
+                input_toxicity = store_ps_in_db(posts)
+                if input_toxicity is None:
+                    logger.info("✅No Records Found Ending the Job")
+                    finished = True
+                    break
+                if score_toxicity and len(input_toxicity) > 0:
+                    initialize_producer(
+                        queue=f"{TOX_QUEUE}-{subreddit_name.lower()}",
+                        jobtype=f"{TOX_JOBTYPE}_{subreddit_name.lower()}",
+                        delayedTimer=delay,
+                        args=[input_toxicity],
+                    )
                 logger.info(f"Stored batch {i + 1} with {len(posts)} posts")
             else:
                 logger.warning(f"No data fetched on batch {i + 1}")
@@ -116,8 +137,8 @@ def get_posts(subreddit_name):
                 finished = True
                 break
             if i < 2:  # Sleep only between requests, not after last one
-                logger.info("Sleeping for 30 seconds before next request")
-                time.sleep(30)
+                logger.info("Sleeping for 10 seconds before next request")
+                time.sleep(10)
 
         # if not finished:
         #     logger.info("Completed 2 requests this minute, waiting until next minute")
@@ -133,6 +154,6 @@ def get_posts(subreddit_name):
         queue=f"enqueue-crawl-{subreddit_name}",
         jobtype=f"enqueue_crawl_{subreddit_name}",
         delayedTimer=datetime.timedelta(minutes=5),
-        args=[subreddit_name.lower()],
+        args=[subreddit_name.lower(), score_toxicity],
     )
     logger.info(f"Completed Scheduling Job for collecting {subreddit_name}")

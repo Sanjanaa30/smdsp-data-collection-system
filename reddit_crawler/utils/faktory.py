@@ -1,6 +1,7 @@
 import datetime
 import os
 from typing import Callable, Optional
+from pathlib import Path
 from dotenv import load_dotenv
 from utils.logger import Logger
 from pyfaktory import Client, Consumer, Job, Producer
@@ -11,7 +12,10 @@ from constants.constants import (
     FAKTORY_PRODUCER_ROLE,
 )
 
-load_dotenv()
+# Load environment from the package .env to ensure consistent behavior
+# regardless of current working directory (aligns with plsql.py)
+# Load only the package-specific .env to avoid picking up unrelated root env
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 logger = Logger(REDDIT_CRAWLER).get_logger()
 
@@ -35,6 +39,40 @@ def initialize_consumer(
             )
             for jobtype in jobtypes:
                 consumer.register(jobtype, fn)
+            consumer.run()
+
+    except Exception as e:
+        logger.debug(f"Error connecting to Faktory server: {e}")
+
+
+def initialize_two_consumer(
+    queue1: list,
+    jobtype1: list,
+    queue2: list,
+    jobtype2: list,
+    fn1: Optional[Callable] = None,
+    fn2: Optional[Callable] = None,
+    concurrency: int = 2,
+):
+    logger.info("Initialing Consumer")
+    logger.debug("queue1: %s, jobtype: %s", queue1, jobtype1)
+    logger.debug("queue2: %s, jobtype: %s", queue2, jobtype2)
+    faktory_server_url = os.getenv(FAKTORY_SERVER_URL)
+    logger.debug(f"Faktory server URL: {faktory_server_url}")
+
+    try:
+        with Client(
+            faktory_url=faktory_server_url, role=FAKTORY_CONSUMER_ROLE
+        ) as client:
+            consumer = Consumer(
+                client=client,
+                queues=["default"] + queue1 + queue2,
+                concurrency=concurrency,
+            )
+            for jobtype in jobtype1:
+                consumer.register(jobtype, fn1)
+            for jobtype in jobtype2:
+                consumer.register(jobtype, fn2)
             consumer.run()
 
     except Exception as e:

@@ -55,7 +55,7 @@ class PLSQL:
             self.conn.commit()
             logger.info("Bulk data inserted successfully.")
         except Exception as e:
-            logger.error(f"Error inserting bulk data into PostgreSQL database: {e}")
+            logger.error(f"Inserting bulk data into PostgreSQL database: {e}")
             self.conn.rollback()
 
     def close_connection(self):

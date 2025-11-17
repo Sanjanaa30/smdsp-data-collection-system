@@ -5,8 +5,9 @@ A utility for initializing and managing a "cold start" catalog crawl process.
 
 Commands:
     --update-new-boards      Update all newly discovered or unprocessed boards.
-    --collect-posts [names]       Collect posts for one or more specified boards.
-    --help                        Display information about available commands.
+    --collect-posts [names]  Collect posts for one or more specified boards.
+    --score-toxicity         Enable toxicity scoring when collecting posts.
+    --help                   Display information about available commands.
 """
 
 import argparse
@@ -25,15 +26,18 @@ class ColdStartCrawler:
     Attributes:
         update_new_boards (bool): Flag indicating whether to update new boards.
         collect_posts (list[str] | None): List of boards names to collect posts for.
+        score_toxicity (bool): Flag indicating whether to enable toxicity scoring.
     """
 
     def __init__(
         self,
         update_new_boards: bool = False,
         collect_posts: list[str] | None = None,
+        score_toxicity: bool = False,
     ):
         self.update_new_boards = update_new_boards
         self.collect_posts = collect_posts
+        self.score_toxicity = score_toxicity
 
     def update_boards(self):
         """Update all newly discovered boards."""
@@ -55,6 +59,8 @@ class ColdStartCrawler:
         logger.info(
             f"⏳ Scheduling Job to Collect posts for Boards: {', '.join(self.collect_posts)}"
         )
+        if self.score_toxicity:
+            logger.info("✅ Enabled scoring toxicity")
 
         for board_name in self.collect_posts:
             initialize_producer(
@@ -63,6 +69,8 @@ class ColdStartCrawler:
                 delayedTimer=datetime.timedelta(seconds=60),
                 args=[
                     board_name.lower(),
+                    [],
+                    self.score_toxicity,
                 ],
             )
 
@@ -84,6 +92,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Cold Start Crawler: Tool for updating Boards and collecting posts.",
         add_help=True,
+        allow_abbrev=False,  # Disable prefix matching - require exact argument names
     )
 
     parser.add_argument(
@@ -95,7 +104,14 @@ def parse_arguments():
     parser.add_argument(
         "--collect-posts",
         nargs="+",
+        metavar="BOARD_NAME",
         help="Collect posts for one or more specified Boards.",
+    )
+
+    parser.add_argument(
+        "--score-toxicity",
+        action="store_true",
+        help="Enable toxicity scoring when collecting posts.",
     )
 
     return parser.parse_args()
@@ -107,6 +123,7 @@ if __name__ == "__main__":
     crawler = ColdStartCrawler(
         update_new_boards=args.update_new_boards,
         collect_posts=args.collect_posts,
+        score_toxicity=args.score_toxicity,
     )
 
     crawler.run()

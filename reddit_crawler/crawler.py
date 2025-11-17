@@ -8,17 +8,20 @@ Commands:
     --update-new-subreddit      Start a consumer to enqueue jobs for updating new Subreddit.
     --collect-posts [names]     Start a consumer to enqueue jobs for collecting posts for given Subreddit.
     --collect-comments [names]  Start a consumer to enqueue jobs for collecting comments for given Subreddit.
+    --score-toxicity            Enable toxicity scoring when scoring posts.
     --help                      Display available commands and usage.
 """
 
 import argparse
 import os
-from constants.constants import REDDIT_CRAWLER
-from utils.faktory import initialize_consumer
-from utils.logger import Logger
-from subreddit_crawler import get_list_of_subreddit
-from posts_crawler import get_posts
+
 from comments_crawler import crawl_comments_for_subreddit
+from constants.constants import REDDIT_CRAWLER, TOX_JOBTYPE, TOX_QUEUE
+from posts_crawler import get_posts
+from subreddit_crawler import get_list_of_subreddit
+from utils.faktory import initialize_consumer, initialize_two_consumer
+from utils.logger import Logger
+from toxicity_consumer import score_post_toxicity_handler
 
 logger = Logger(REDDIT_CRAWLER).get_logger()
 
@@ -33,10 +36,12 @@ class CrawlerConsumer:
         update_new_subreddit: bool = False,
         collect_posts: list[str] | None = None,
         collect_comments: list[str] | None = None,
+        score_toxicity: bool = False,
     ):
         self.update_new_subreddit = update_new_subreddit
         self.collect_posts = collect_posts
         self.collect_comments = collect_comments
+        self.score_toxicity = score_toxicity
 
     def start_update_consumer(self):
         """Start Faktory consumer for updating Subreddit."""
@@ -64,9 +69,32 @@ class CrawlerConsumer:
 
         # logger.info(queue, jobtype)
         concurrency = os.getenv("FAKTORY_CONCURRENCY", 2)
-        initialize_consumer(
-            queue=queue, jobtypes=jobtype, fn=get_posts, concurrency=int(concurrency)
-        )
+        logger.info(f"Score Toxicity {self.score_toxicity}")
+        if not self.score_toxicity:
+            initialize_consumer(
+                queue=queue,
+                jobtypes=jobtype,
+                fn=get_posts,
+                concurrency=int(concurrency),
+            )
+        if self.score_toxicity:
+            toxicity_queue = [
+                f"{TOX_QUEUE}-{boards_name.lower()}"
+                for boards_name in self.collect_posts
+            ]
+            toxicity_job = [
+                f"{TOX_JOBTYPE}_{boards_name.lower()}"
+                for boards_name in self.collect_posts
+            ]
+
+            initialize_two_consumer(
+                queue1=queue,
+                jobtype1=jobtype,
+                queue2=toxicity_queue,
+                jobtype2=toxicity_job,
+                fn1=get_posts,
+                fn2=score_post_toxicity_handler,
+            )
 
     def start_collect_comments_consumer(self):
         """Start Faktory consumer for collecting comments."""
@@ -83,12 +111,31 @@ class CrawlerConsumer:
         ]
 
         concurrency = os.getenv("FAKTORY_CONCURRENCY", 2)
-        initialize_consumer(
-            queue=queue,
-            jobtypes=jobtype,
-            fn=crawl_comments_for_subreddit,
-            concurrency=int(concurrency),
-        )
+        if not self.score_toxicity:
+            initialize_consumer(
+                queue=queue,
+                jobtypes=jobtype,
+                fn=crawl_comments_for_subreddit,
+                concurrency=int(concurrency),
+            )
+        if self.score_toxicity:
+            toxicity_queue = [
+                f"{TOX_QUEUE}-comment-{boards_name.lower()}"
+                for boards_name in self.collect_comments
+            ]
+            toxicity_job = [
+                f"{TOX_JOBTYPE}_comment_{boards_name.lower()}"
+                for boards_name in self.collect_comments
+            ]
+
+            initialize_two_consumer(
+                queue1=queue,
+                jobtype1=jobtype,
+                queue2=toxicity_queue,
+                jobtype2=toxicity_job,
+                fn1=crawl_comments_for_subreddit,
+                fn2=score_post_toxicity_handler,
+            )
 
     def run(self):
         """Run the appropriate Faktory consumer based on CLI arguments."""
@@ -126,6 +173,12 @@ def parse_arguments():
         help="Start a consumer to enqueue crawl jobs for specified subreddit comments (space-separated).",
     )
 
+    parser.add_argument(
+        "--score-toxicity",
+        action="store_true",
+        help="Enable toxicity scoring for the boards specified in --collect-posts.",
+    )
+
     return parser.parse_args()
 
 
@@ -136,6 +189,7 @@ if __name__ == "__main__":
         update_new_subreddit=args.update_new_subreddit,
         collect_posts=args.collect_posts,
         collect_comments=args.collect_comments,
+        score_toxicity=args.score_toxicity,
     )
 
     consumer.run()

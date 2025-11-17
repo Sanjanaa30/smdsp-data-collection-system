@@ -44,6 +44,25 @@ class Posts:
         """Return the unique post number."""
         return self.post_no
 
+    def get_attributes_for_toxicity(self):
+        """Returns the attributes need for toxicity"""
+        title_or_comment = ""
+        if self.resto == 0:
+            title_or_comment = "POST"
+        else:
+            title_or_comment = "COMMENT"
+
+        return {
+            "post_no": self.post_no,
+            "titleOrComment": title_or_comment,
+            "board_name": self.board_name,
+            "comment": self.comment,
+        }
+
+    # def is_comment_empty(self):
+    #     """Returns the attributes need for toxicity"""
+    #     return len(self.comment) == 0
+
     def to_tuple(self):
         """Return all attributes as a tuple."""
         return (

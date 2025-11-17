@@ -51,7 +51,7 @@ class Logger:
 
                 if log_dir:
                     os.makedirs(log_dir, exist_ok=True)
-                print(f"Log path {log_file}")
+                # print(f"Log path {log_file}")
                 # Use TimedRotatingFileHandler to avoid Windows file locking issues
                 fh = TimedRotatingFileHandler(
                     log_file,

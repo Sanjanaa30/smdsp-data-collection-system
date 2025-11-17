@@ -1,17 +1,17 @@
 import requests
 from typing import Dict, Any, Optional
-from constants.api_constants import CATALOG_JSON, FOURCHAN_BASE_URL, THREADS, DOT_JSON
+from constants.api_constants import CATALOG_JSON, THREADS, DOT_JSON
 from constants.constants import CHAN_CRAWLER
 from utils.logger import Logger
 from urllib.parse import urljoin
-
+from constants.errors_constants import ERROR429
 
 logger = Logger(CHAN_CRAWLER).get_logger()
 
 
 class ChanClient:
-    def __init__(self):
-        self.base_url = FOURCHAN_BASE_URL
+    def __init__(self, base_url):
+        self.base_url = base_url
 
     def make_request(self, endpoint: str) -> Optional[Dict[Any, Any]]:
         url = urljoin(self.base_url, endpoint)
@@ -32,6 +32,31 @@ class ChanClient:
         except requests.exceptions.HTTPError as e:
             logger.error(f"HTTP error for {url}: {e}")
             return None
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request failed for {url}: {e}")
+            return None
+
+        except ValueError as e:
+            logger.error(f"Failed to parse JSON from {url}: {e}")
+            return None
+
+    def make_post_request(self, endpoint, payload, timeout):
+        url = urljoin(self.base_url, endpoint)
+        logger.info(f"Fetching data from {url}")
+        try:
+            response = requests.post(url, json=payload, timeout=timeout)
+            if response.status_code == 404:
+                logger.warning(f"Resource not found: {url} (404)")
+                return None
+            response.raise_for_status()
+            # Parse JSON response
+            json_data = response.json()
+            logger.info(f"Successfully fetched data from {url}")
+            logger.debug(f"Response data: {json_data}")
+            return json_data
+        except requests.exceptions.HTTPError as e:
+            logger.warning(f"Raising warning for to many requests  {url}: {e}")
+            return ERROR429
         except requests.exceptions.RequestException as e:
             logger.error(f"Request failed for {url}: {e}")
             return None

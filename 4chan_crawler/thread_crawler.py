@@ -1,15 +1,16 @@
-from chan_client import ChanClient
-from typing import List, Dict, Any
-from utils.logger import Logger
-from constants.constants import CHAN_CRAWLER, POSTS_FIELDS
-from constants.api_constants import THREAD, THREADS, DOT_JSON
-from constants.plsql_constants import (
-    INSERT_BULK_POSTS_DATA_QUERY,
-    CHECK_EXISTING_POSTS_QUERY,
-)
-from utils.faktory import initialize_producer
-from modal.posts import Posts
 import datetime
+from typing import Any, Dict, List
+
+from chan_client import ChanClient
+from constants.api_constants import DOT_JSON, FOURCHAN_BASE_URL, THREAD, THREADS
+from constants.constants import CHAN_CRAWLER, POSTS_FIELDS, TOX_JOBTYPE, TOX_QUEUE
+from constants.plsql_constants import (
+    CHECK_EXISTING_POSTS_QUERY,
+    INSERT_BULK_POSTS_DATA_QUERY,
+)
+from modal.posts import Posts
+from utils.faktory import initialize_producer
+from utils.logger import Logger
 
 logger = Logger(CHAN_CRAWLER).get_logger()
 
@@ -22,18 +23,48 @@ class ThreadCrawler:
 
     def __init__(self):
         """Initialize the thread crawler with a ChanClient instance."""
-        self.client = ChanClient()
+        self.client = ChanClient(FOURCHAN_BASE_URL)
 
-    def threads_json_to_thread_number(self, thread_list) -> set:
-        thread_numbers = set()
+    def threads_json_to_thread_number(self, thread_list, old_threads):
+        all_threads = set()
+
+        # Convert old_threads list of dicts to a single dict for easy lookup
+        old_threads_dict = {}
+        for thread_dict in old_threads:
+            old_threads_dict.update(thread_dict)
+
         for page in thread_list:
             # print(f"{page['page']}")
             for thread in page["threads"]:
-                # logger.debug(f"{thread['no']}")
-                thread_numbers.add(thread["no"])
-        return thread_numbers
+                thread_no = thread["no"]
+                last_modified = thread["last_modified"]
 
-    def get_threads_from_board(self, board: str) -> List[Dict[str, Any]]:
+                # Check if thread exists in old_threads and if last_modified has changed
+                if thread_no in old_threads_dict:
+                    if old_threads_dict[thread_no] == last_modified:
+                        # Thread hasn't changed, skip it
+                        logger.debug(
+                            f"Skipping thread {thread_no} - no changes since last crawl"
+                        )
+                        continue
+                    else:
+                        logger.debug(
+                            f"Thread {thread_no} has been modified - adding to crawl queue"
+                        )
+
+                # Add thread to all_threads (either new or modified)
+                threads = {thread_no: last_modified}
+                all_threads.add(thread_no)
+                old_threads_dict.update(threads)
+
+        # Convert old_threads_dict back to list of individual dicts format
+        old_threads_list = [{k: v} for k, v in old_threads_dict.items()]
+
+        return list(all_threads), old_threads_list
+
+    def get_threads_from_board(
+        self, board: str, old_threads=[], score_toxicity: bool = False
+    ) -> List[Dict[str, Any]]:
         """
         Fetch all threads from a specific board.
 
@@ -57,20 +88,22 @@ class ThreadCrawler:
             logger.error(f"No threads found from /{board}/ board")
             return []
 
-        all_threads = list(self.threads_json_to_thread_number(threads_data))
-
+        all_threads, old_threads = self.threads_json_to_thread_number(
+            threads_data, old_threads
+        )
+        logger.debug(f"Old Threads {old_threads}")
         initialize_producer(
             queue=f"enqueue-crawl-thread-{board}",
             jobtype=f"enqueue_crawl_thread_{board}",
             delayedTimer=datetime.timedelta(seconds=15),
-            args=[board, all_threads],
+            args=[board, all_threads, score_toxicity],
         )
 
         initialize_producer(
             queue=f"enqueue-crawl-listing-{board}",
             jobtype=f"enqueue_crawl_listing_{board}",
             delayedTimer=datetime.timedelta(minutes=5),
-            args=[board],
+            args=[board, old_threads, score_toxicity],
         )
 
     def fetch_thread_posts(self, board_name, thread_ids):
@@ -184,12 +217,15 @@ class ThreadCrawler:
             logger.info(
                 f"Successfully inserted {len(post_records)} new posts into the database."
             )
+            return new_posts
         except Exception as e:
             logger.error(f"Error inserting posts into the database: {e}")
         finally:
             db_client.close_connection()
 
-    def collect_and_store_posts(self, board_name, thread_ids: list):
+    def collect_and_store_posts(
+        self, board_name, thread_ids: list, score_toxicity: bool = False
+    ):
         """
         Fetches posts for the given board and thread list, then stores them in the database.
         """
@@ -204,7 +240,25 @@ class ThreadCrawler:
         posts = self.fetch_thread_posts(board_name, thread_ids)
         if posts:
             logger.info(f"Fetched {len(posts)} posts from {len(thread_ids)} threads.")
-            self.save_posts_to_database(board_name, posts)
+            new_posts = self.save_posts_to_database(board_name, posts)
+
+            if score_toxicity:
+                logger.info(f"Scoring toxicity for {board_name}")
+                delay = datetime.timedelta(seconds=30)
+                input_toxicity = [
+                    post.get_attributes_for_toxicity()
+                    for post in new_posts
+                    if post.comment
+                ]
+                initialize_producer(
+                    queue=f"{TOX_QUEUE}-{board_name.lower()}",
+                    jobtype=f"{TOX_JOBTYPE}_{board_name.lower()}",
+                    delayedTimer=delay,
+                    args=[input_toxicity],
+                )
+                logger.debug(
+                    f"Scheduled collect toxicuty job with a total payload: {len(input_toxicity)}"
+                )
         else:
             logger.warning(f"No posts retrieved for board '{board_name}'.")
 

@@ -1,17 +1,22 @@
 import datetime
 import os
+from pathlib import Path
 from typing import Callable, Optional
-from dotenv import load_dotenv
-from utils.logger import Logger
-from pyfaktory import Client, Consumer, Job, Producer
+
 from constants.constants import (
     CHAN_CRAWLER,
-    FAKTORY_SERVER_URL,
     FAKTORY_CONSUMER_ROLE,
     FAKTORY_PRODUCER_ROLE,
+    FAKTORY_SERVER_URL,
 )
+from dotenv import load_dotenv
+from pyfaktory import Client, Consumer, Job, Producer
+from utils.logger import Logger
 
-load_dotenv()
+# Load environment from the package .env to ensure consistent behavior
+# regardless of current working directory (aligns with plsql.py)
+# Load only the package-specific .env to avoid picking up unrelated root env
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 logger = Logger(CHAN_CRAWLER).get_logger()
 
@@ -51,21 +56,32 @@ def initialize_producer(
     logger.debug("queue: %s, jobtype: %s", queue, jobtype)
     faktory_server_url = os.getenv(FAKTORY_SERVER_URL)
     logger.debug(f"Faktory server URL: {faktory_server_url}")
-    with Client(faktory_url=faktory_server_url, role=FAKTORY_PRODUCER_ROLE) as client:
-        run_at = datetime.datetime.now(datetime.UTC) + delayedTimer
-        run_at = run_at.isoformat()[:-7] + "Z"
-        # logger.info(f"run_at = {run_at}")
-        producer = Producer(client=client)
-        job = Job(
-            jobtype=jobtype,
-            queue=queue,
-            args=args or [],
-            at=str(run_at),
+    logger.debug(f"Args for Job: {args}")
+    try:
+        with Client(
+            faktory_url=faktory_server_url, role=FAKTORY_PRODUCER_ROLE
+        ) as client:
+            # NEW: default to zero delay if None
+            if delayedTimer is None:
+                delayedTimer = datetime.timedelta(seconds=0)
+
+            run_at = datetime.datetime.now(datetime.UTC) + delayedTimer
+            run_at = run_at.isoformat()[:-7] + "Z"
+            # logger.info(f"run_at = {run_at}")
+            producer = Producer(client=client)
+            job = Job(
+                jobtype=jobtype,
+                queue=queue,
+                args=args or [],
+                at=str(run_at),
+            )
+            producer.push(job)
+        logger.info(
+            "Scheduled job '%s' on queue '%s' to run at %s",
+            jobtype,
+            queue,
+            run_at,
         )
-        producer.push(job)
-    logger.info(
-        "Scheduled job '%s' on queue '%s' to run at %s",
-        jobtype,
-        queue,
-        run_at,
-    )
+    except Exception as e:
+        logger.error(f"Error Initialing faktory queue {queue}")
+        logger.error(f"{e}")

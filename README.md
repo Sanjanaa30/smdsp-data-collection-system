@@ -234,9 +234,9 @@ Go to [http://localhost:7420] in your browser.
 
 #4. Start Faktory for collecting comments from multiple Subreddit
 > python3 reddit_crawler/cold_start_crawler.py --collect-comments *<subredit_name1>* *<subredit_name2>*
-   - Example: python3 reddit_crawler/cold_start_crawler.py --collect-posts "Technology" "geopolitics" "Outdoors"
+   - Example: python3 reddit_crawler/cold_start_crawler.py --collect-comments "Technology" "geopolitics" "Outdoors"
 > python3 reddit_crawler/crawler.py --collect-comments *<subredit_name1>* *<subredit_name2>*
-   - Example: python3 reddit_crawler/crawler.py --collect-posts "geopolitics" "technology" "AutoGPT" "sports" "ArtificialInteligence"
+   - Example: python3 reddit_crawler/crawler.py --collect-comments "geopolitics" "technology" "AutoGPT" "sports" "ArtificialInteligence"
 
 #4. Show help
 > python3 reddit_crawler/cold_start_crawler.py --help   

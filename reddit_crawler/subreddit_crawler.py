@@ -1,6 +1,6 @@
 import time
 from reddit_client import RedditClient
-from constants.api_constants import SUBREDDIT_URL
+from constants.api_constants import SUBREDDIT_URL, REDDIT_BASE_URL
 from constants.constants import REDDIT_CRAWLER, SUBREDDIT_FIELDS
 from modal.subreddit import Subreddit
 from utils.logger import Logger
@@ -13,7 +13,7 @@ from constants.plsql_constants import (
 import datetime
 
 logger = Logger(REDDIT_CRAWLER).get_logger()
-reddit_client = RedditClient()
+reddit_client = RedditClient(REDDIT_BASE_URL)
 
 
 def fetch_all_subreddits(after=None) -> tuple[list[Subreddit], str | None]:

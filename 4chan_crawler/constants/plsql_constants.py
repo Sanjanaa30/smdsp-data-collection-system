@@ -24,3 +24,59 @@ WHERE NOT EXISTS (
     WHERE board_name = %s AND post_no = candidate_post_no
 );
 """
+
+INSERT_BULK_TOXICITY_DATA_QUERY = """
+INSERT INTO toxicity (
+  board_name, titleOrComment, post_no, comment, language,
+  toxicity, severe_toxicity, identity_attack, insult, threat,
+  profanity, sexually_explicit, flirtation, obscene, spam, unsubstantial
+) VALUES %s
+ON CONFLICT (board_name, post_no) DO UPDATE SET
+  titleOrComment = EXCLUDED.titleOrComment,
+  comment = EXCLUDED.comment,
+  language = EXCLUDED.language,
+  toxicity = EXCLUDED.toxicity,
+  severe_toxicity = EXCLUDED.severe_toxicity,
+  identity_attack = EXCLUDED.identity_attack,
+  insult = EXCLUDED.insult,
+  threat = EXCLUDED.threat,
+  profanity = EXCLUDED.profanity,
+  sexually_explicit = EXCLUDED.sexually_explicit,
+  flirtation = EXCLUDED.flirtation,
+  obscene = EXCLUDED.obscene,
+  spam = EXCLUDED.spam,
+  unsubstantial = EXCLUDED.unsubstantial,
+  scored_at = now()
+"""
+
+
+# Select the latest row of a post (by board & post_no) in order to get its comment text
+# Gives one row per (board_name, post_no) pair” (the first one according to the ORDER BY below).
+SELECT_LATEST_POST_TEXT = """
+SELECT DISTINCT ON (board_name, post_no)
+       board_name, post_no, comment
+FROM posts
+WHERE board_name = %s AND post_no = %s
+ORDER BY board_name, post_no, created_at DESC;
+"""
+
+
+SELECT_UNSCORED_POSTS = """
+WITH latest AS (
+  SELECT DISTINCT ON (board_name, post_no)
+         board_name,
+         post_no,
+         resto,
+         comment
+  FROM posts
+  where board_name = %s
+  ORDER BY board_name, post_no, created_at DESC
+)
+SELECT l.board_name, l.post_no, l.resto, l.comment
+FROM latest l
+LEFT JOIN toxicity s
+  ON s.board_name = l.board_name
+ AND s.post_no = l.post_no
+WHERE s.post_no IS NULL
+limit %s
+"""
