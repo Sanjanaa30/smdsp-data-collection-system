@@ -1,23 +1,19 @@
-## Group Members
+## Group Members:
+------------------------------
+### Karthik Maganahalli Prakash
+*Contributions:*
+- Researched and selected data sources (4chan mandatory + Reddit vs. Bluesky comparison).
+- Collected API documentation and identified the specific endpoints (e.g., boards.json, OAuth, comments API).
+- Wrote the Data Sources section of the proposal.
+- Helped justify the choice of Reddit over Bluesky.
 
 ### Sanjana Shivanand
-**Implementation Contributions:**
-- Developed the 4chan data collection pipeline (threads, posts, boards).
-- Implemented scheduler, HTTP fetcher, and parser modules for 4chan.
-- Integrated 4chan data storage and indexing with PostgreSQL.
-- Documented 4chan crawler modules and contributed to the system architecture diagram.
-- Performed data analysis and generated visualizations for 4chan board activity.
-
-### Karthik Maganahalli Prakash
-**Implementation Contributions:**
-- Developed the Reddit data collection pipeline (subreddits, posts, comments).
-- Integrated Reddit data storage and indexing with PostgreSQL.
-- Generated reusable code for Faktory, Logger, and PLSQL.
-- Documented Reddit crawler modules and contributed to the system architecture diagram.
-- Performed data analysis and generated visualizations for Reddit subreddit activity.
+*Contributions:*
+- Designed the system architecture diagram (crawler service, PostgreSQL DB, monitoring etc.).
+- Drafted the System Design section describing components (scheduler, fetcher, parser, checkpointer).
+- Outlined Measurements & Analysis ideas.
+- Created the Napkin Math estimates for weekly data collection and storage.
 
 ### Both Together
-- Designed the overall system architecture and Faktory job scheduling.
-- Set up and configured Docker environments for database and job queue services.
-- Managed database migrations and schema updates using SQLx CLI and Rust.
-- Maintained version control and documentation consistency across all implementation deliverables.
+- Wrote the Abstract and Conclusion collaboratively.
+- Edited for ACM formatting (Overleaf setup, references, citation formatting).
